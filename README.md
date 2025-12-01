@@ -152,24 +152,31 @@ Total Rack Height Available (12U): 53.4 cm.
  
 
 
-#### Current Hardware
-Connected to eero 6+ mesh pod 
+#### Hardware
+Connected to eero 6+ mesh pod
+
+Netgear Router AC1750, 1750Mbps | Provided by Explorer ISP
 
 Dell Precision 3620 Tower i7-7700 Quad Core 3.6Ghz 32B 1TB NVME GPU NvS310 | 419$ amazon.ca | [link][https://www.amazon.ca/Dell-Optiplex-7050-Excellent-Condition/dp/B0F854GHFB/ref=sr_1_1?sr=8-1]
 
 Lenovo ThinkCentre M710Q Tiny Micro i5-7400T 2.4Ghz 8GB RAM with 500GB HDD | 102.14$ [link][https://www.ebay.ca/itm/197901648050?mkrid=711-127632-2357-0&sssrc=4429486&stype=1&var=]
 
-Lenovo ThinkCentre M715Q AMD Pro A10-9700E 8GB 500GB HD | ebay.ca [link][https://www.ebay.ca/itm/155474578754?mkrid=711-127632-2357-0&sssrc=4429486&stype=1&var=]
-Lenovo ThinkCentre M710q- i5 7500T-8GB DDR4–Intel AC8265 - NO HDD [link][http://ebay.ca/itm/376693720411]
+Lenovo ThinkCentre M715Q AMD Pro A10-9700E 8GB 500GB HD | 99.98$ | ebay.ca [link][https://www.ebay.ca/itm/155474578754?mkrid=711-127632-2357-0&sssrc=4429486&stype=1&var=]
 
+Lenovo ThinkCentre M710q- i5 7500T-8GB DDR4–Intel AC8265 - NO HDD | 121.74$ ebay.ca | [link][http://ebay.ca/itm/376693720411] 
+
+SANDISK SSD Plus 500GB Opened Box | 59.27$ | amazon.ca [link][https://www.amazon.ca/dp/B0F4Y2VR8S?ref_=cm_sw_r_cso_cp_apan_dp_KNQYPGB8N57W8ANDHRKR]
+
+SANDISK SSD Plus 500GB | 64.99$ | amazon.ca [link][https://www.amazon.ca/dp/B0F4Y2VR8S?ref_=cm_sw_r_cso_cp_apan_dp_KNQYPGB8N57W8ANDHRKR]
+
+Patriot P220 128GB Internal SSD - SATA 3 2.5 [link][https://www.amazon.ca/dp/B0BS9W3T48?ref_=cm_sw_r_cso_cp_apan_dp_AZNB3RMGACHG8HSKY6DT] | 24.99$ Amazon.ca
 
 Raspberry Pi 5 8GB 2023 | 133.69$ | amazon.ca [link][https://www.amazon.ca/dp/B0CK2FCG1K?ref_=cm_sw_r_cso_cp_apan_dp_M2HK0C5AXXZCHN42H14E]
 
 GeeekPi P33 M.2 NVME M-Key PoE+ | 48.98$ | amazon.ca [link][https://www.amazon.ca/dp/B0D8JC3MXQ?ref_=cm_sw_r_cso_cp_apan_dp_TY1G9N40WHAF650DFV1E]
 
 
-Installation and Maintenance
-#### Server
+#### Rack
 GeeekPi 12U Server Cabinet | 209.94$ | amazon.ca [link][https://www.amazon.ca/GeeekPi-Cabinet-Equipment-RackMate-Rackmount/dp/B0DT2XM22G/ref=sr_1_1_sspa?s=electronics&sr=1-1-spons&sp_csd=d2lkZ2V0TmFtZT1zcF9hdGY&psc=1]
 
 GeeekPi 12 Port Patch Panel | 23.79$ | amazon.ca [link][https://www.amazon.ca/dp/B0D5XPNHHF?ref_=cm_sw_r_cso_cp_apan_dp_TMZ63EQ1FNC02H6FC7M3]
@@ -183,12 +190,8 @@ PDU 3 Socket 42.72$ | aliexpress.com [link][https://www.aliexpress.com/item/1005
 Freenove 7 Inch Touchscreen Monitor | 47.96$ | amazon.ca [link][https://www.amazon.ca/dp/B0BPP6MFFJ?ref_=cm_sw_r_cso_cp_apan_dp_AH6BYX1167Z1GPQD24CM]
 
 
-SANDISK SSD Plus 500GB Opened Box | 59.27$ | amazon.ca [link][https://www.amazon.ca/dp/B0F4Y2VR8S?ref_=cm_sw_r_cso_cp_apan_dp_KNQYPGB8N57W8ANDHRKR]
 
-SANDISK SSD Plus 500GB | 64.99$ | amazon.ca [link][https://www.amazon.ca/dp/B0F4Y2VR8S?ref_=cm_sw_r_cso_cp_apan_dp_KNQYPGB8N57W8ANDHRKR]
-
-
-###### Network
+#### Network
 MikroTik CRS310-8G+2S+in 276$ | amazon.ca [link][https://www.amazon.ca/Mikrotik-CRS310-8G-2S-IN-MikroTik/dp/B0CH9NHFHS?source=ps-sl-shoppingads-lpcontext&ref_=fplfs&psc=1&smid=A1DVY69FJDQ80C]
 
 Mikrotik RMK-2/10 Rack Mount | 33.52$ | wirelessnetware.ca [link][https://www.shop.wirelessnetware.ca/accessories/516-rmk-210-4752224008688.html]
@@ -197,7 +200,7 @@ Mikrotik RMK-2/10 Rack Mount | 33.52$ | wirelessnetware.ca [link][https://www.sh
 Gigabit PoE+ Injector 18.88$ | amazon.ca [link][https://www.amazon.ca/Injector-IEEE802-3at-Replacement-TPE-115GI-TL-PoE160S/dp/B00NRF9GQO/ref=asc_df_B00NRF9GQO?mcid=c5b2d3709dca3350af73dc68296d4834&hvadid=706724917389&hvpos=&hvnetw=g&hvrand=14741287802779362230&hvpone=&hvptwo=&hvqmt=&hvdev=c&hvdvcmdl=&hvlocint=&hvlocphy=9220713&hvtargid=pla-568844063746&psc=1&hvocijid=14741287802779362230-B00NRF9GQO-&hvexpln=0]
 
 2.5Gb Network Adapter M.2 A+E/Mini PCIE to RJ45 | 18.79$ | aliexpress.com [link][https://www.aliexpress.com/item/1005008820106326.html?spm=a2g0o.productlist.main.4.14f3CSoWCSoW7p&algo_pvid=9ea1b4c1-c266-4f9c-a9bd-bf1601744de0&pdp_ext_f=%7B%22order%22%3A%2210%22%2C%22eval%22%3A%221%22%2C%22fromPage%22%3A%22search%22%7D&utparam-url=scene%3Asearch%7Cquery_from%3A%7Cx_object_id%3A1005008820106326%7C_p_origin_prod%3A]
-N100 Linux Industrial Embedded Computer 4x2.5G [link][https://www.aliexpress.com/item/1005005404120290.html?invitationCode=VjJnQWNhT01xcC80d24rVHZxZWNoOGNTMG56SUU2RytUNDgxazRGL2NkS2VQemFTZUJrNWVWT0s1MU1hdTAyWg&srcSns=sns_Copy&spreadType=socialShare&social_params=21986607541&bizType=ProductDetail&spreadCode=VjJnQWNhT01xcC80d24rVHZxZWNoOGNTMG56SUU2RytUNDgxazRGL2NkS2VQemFTZUJrNWVWT0s1MU1hdTAyWg&aff_fcid=ebdb42e46d7b4693816e537ded0ba360-1764561068538-06639-_mraEl4l&tt=MG&aff_fsk=_mraEl4l&aff_platform=default&sk=_mraEl4l&aff_trace_key=ebdb42e46d7b4693816e537ded0ba360-1764561068538-06639-_mraEl4l&shareId=21986607541&businessType=ProductDetail&platform=AE&terminal_id=5a00cd0046d34917859afd9a27ad68fd&afSmartRedirect=y]
+N100 Linux Industrial Embedded Computer 4x2.5G | 283.29$ | aliexpress.com [link][https://www.aliexpress.com/item/1005005404120290.html?invitationCode=VjJnQWNhT01xcC80d24rVHZxZWNoOGNTMG56SUU2RytUNDgxazRGL2NkS2VQemFTZUJrNWVWT0s1MU1hdTAyWg&srcSns=sns_Copy&spreadType=socialShare&social_params=21986607541&bizType=ProductDetail&spreadCode=VjJnQWNhT01xcC80d24rVHZxZWNoOGNTMG56SUU2RytUNDgxazRGL2NkS2VQemFTZUJrNWVWT0s1MU1hdTAyWg&aff_fcid=ebdb42e46d7b4693816e537ded0ba360-1764561068538-06639-_mraEl4l&tt=MG&aff_fsk=_mraEl4l&aff_platform=default&sk=_mraEl4l&aff_trace_key=ebdb42e46d7b4693816e537ded0ba360-1764561068538-06639-_mraEl4l&shareId=21986607541&businessType=ProductDetail&platform=AE&terminal_id=5a00cd0046d34917859afd9a27ad68fd&afSmartRedirect=y]
 
 
 
