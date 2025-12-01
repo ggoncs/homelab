@@ -1,237 +1,206 @@
-# Mini Rack Server - Proxmox Cluster + TrueNAS 
+# 🏠 My Homelab Journey
 
-## My Homelab Experience/Story
+## 📖 My Story
 
-This is my Second Homelab, direct upgrade of the single Dell Tower hosting on Debian + CasaOS. Though very capable still especially the 32GB DDR4 RAM. I was facing issue with 
-data redundancy, backups and storage. I would store all my games incase I wanted to download them again. I filled the 1TB nvme completely full. making it impossible to backup 
-with timeshift. At that point I was starting to host all my backups on Proton drive for data security. And it was starting to defeat the hole point of my server
+This is my second homelab—a direct upgrade from a single Dell Tower running Debian + CasaOS. While the original setup was capable (especially with 32GB DDR4 RAM), I faced critical issues with data redundancy, backups, and storage. I had filled the 1TB NVMe completely, storing all my games for potential re-downloads. This made it impossible to use Timeshift for backups, forcing me to rely on Proton Drive, which defeated the entire purpose of having a local server.
 
-It was time for an upgrade, This time I will get a dedicated NAS to host my games-download, media files, and also a full fledge plex server for movies. Also, a while ago I bought a rasberry pi 5 and a lenovo thinkcentre mini that were collecting dust not being used for anything, as I didin't have enough ethernet ports in the basement to support more than 2 computers (xbox and dell tower) from the eero mesh. It was clear to me that I needed a full fledge server rack with networking. 
+It was time for an upgrade. This time, I wanted a dedicated NAS to host game downloads, media files, and run a full-fledged Plex server. I also had a Raspberry Pi 5 and Lenovo ThinkCentre mini collecting dust—unused because I only had two Ethernet ports available in the basement from my Eero mesh (one for Xbox, one for the Dell tower). I needed a proper server rack with networking infrastructure.
 
-On the software side, I was seeing some serious limitation to my setup, CasaOS is super pretty, free and great-gateway drug to IT without needing fork over a money to UGREEN for their NAS. I needed change. CasaOS. it very good at spining up known docker containers though their app menu, but as soon you started experimenting and spinning up you own ones, practicing DNS/Bash scripting/Apache. They started to break, needing me to rebuild them often. CasaOS breaking Nextcloud four seperate time after updating. needing me to zip file and export to new container. I was starting to use Portainer as my dashboard to managed my containers instead of CasaOS... yeah not good
+### 🚨 Software Limitations
 
-Unrelated Issue, I was having a bit of trouble hosting steam-cli for my games. So I decided to install a GUI (KDE) to just have steam so I can install my games. HUGE issues started to happen. My GPU NvS310 stopped working, and steam was very unhappy that it couldn't use gpu accelration properly, Not only that, because I intalled KDE, it uses a different network manager called "Network Manager" (you don't say) and debian server uses ifupdown. This broke so many things; one of the most annoying is that my containers didin't know anymore what default gateway to use anymore, so they would just make one. Making them not possible to connect to the internet anymore for the server. So everytime I updated and rebooted. I would need physically run these commands: 
+On the software side, CasaOS showed serious limitations. While it's pretty, free, and a great gateway to IT without paying premium prices for commercial NAS solutions, it had issues. CasaOS excels at spinning up known Docker containers through its app menu, but experimenting with custom containers and practicing DNS/Bash scripting/Apache caused frequent breakage requiring rebuilds. CasaOS broke my Nextcloud installation four separate times after updates, forcing me to export and migrate to new containers each time. I eventually started using Portainer as my primary dashboard—not a good sign.
 
-@bash
+### 💥 The Breaking Point
+
+I encountered trouble hosting Steam-CLI for my games, so I installed a GUI (KDE) to run Steam directly. This caused massive issues:
+- My NVS310 GPU stopped working
+- Steam couldn't use GPU acceleration properly
+- KDE uses Network Manager while Debian Server uses ifupdown, creating conflicts
+- Containers lost their default gateway configuration and couldn't connect to the internet
+
+Every time I updated and rebooted, I had to physically run these commands:
+
+```bash
 nmcli device show enp0s31f6
-sudo ip route flush dev vethe90e8b0 
-@end
+sudo ip route flush dev vethe90e8b0
+```
 
- 
+This was incredibly frustrating since I couldn't SSH in to fix it remotely. Time for a new journey with my upgraded homelab!
 
-So stupid and annoying as I couln't SSH and fix it. Well now I'm embarking a new journay with my now upgraded Homelab!
+---
 
+## ✅ Requirements
 
+### Core Requirements
+- ✅ RAID 5 storage
+- ✅ 8-port managed 2.5GbE switch
+- ✅ Bastion host (can run in container with OPNsense)
+- ✅ 12U rack server
+- ❌ **pfSense** - Buying a firewall with pfSense is expensive and overkill for now. I'm not the network admin at home, so I don't currently need it.
+- ❌ **Ethernet over Power (EoP)** - Since I wanted a 10-inch managed switch, only Mikrotik and QNAP are well-known options. QNAP supports PoE and 2.5GbE but costs double. A PoE+ injector is affordable, and I only need it for the Raspberry Pi (which maxes at 1Gbps anyway).
 
-##### Requirements:
+### 📊 Analysis: Current Setup Issues
 
-- RAID 5 ✅
-- 8 port managed switch 2.5GBs ✅
-- bastion host esque (can be run in a container with opensense) ✅
-- 12U rack server ✅
-- PFsense (bonus) ❌ 
-Buying a firewall with pfsense built-in is really expensive, and honestly overkill for now, also right now at home I am not full admin of the network so I currently do not have need for it.
+**Hardware:**
+- Server uses mesh network instead of direct router connection (could use EoP)
+- Eero mesh pod has only two Ethernet ports—not enough for expansion
+- Current hardware can't communicate effectively (solution: Proxmox cluster)
+- No data redundancy (solution: RAID 5+1)
+- Out of space, couldn't follow industry-standard 3-2-1 backup strategy
+- Server location in living room requires low noise
+- Expanding network means low idle power consumption is critical
+- Need to segregate storage from main hardware while learning (solution: Proxmox + TrueNAS)
 
-- EoP as my server would be in the basement ❌ 
-Since I wanted a managed switch 10inch, there is only two option of well known brands, Mintrokit and QNAP. QNAP supports PoE and 2.5GBs but, is double the price. therefore a deal breaker and buying a PoE+ injector is not that expensive and I don't loose that much perfomance as the only device needing it is Rasberry Pi that only has 1GB/s speed
-
-
-
-Requirements Gathering 
-
-Current Hardware
-
-- Eero Mesh pod
-- Dell Precision 3620 Tower 
-- Lenovo ThinkCentre M710Q  
-- Raspberry Pi 5 
-- Netgear Router AC1750, 1750Mbps
-
-- The Server is using the Mesh network instead of being connected directly to the router, (Can use EoP) 
-
-- Eero mesh pod only have two ethernet ports which is not enough to connect more devices and giving room to upgrade horizontally (use a switch)
-
-- Current hardware cannot communicate to each other (Can use Proxmox cluster)
-
-- No data redundancy (Use RAID 5+1)
-
-- Ran out of space, couldn't do industry standard 3-2-1 backups (multiple machine to host backups)
-
-- Server location is near a desk in the living room, low noise needs to be a high priority 
-
-- Since expanding the amount of computers on the network, Low idle Watt consomption need to be considered 
-
-- Segregating storage computer with main hardware, as I'm still learning (Use proxmox + TrueNAS)
-
-
-
-(Analysis)
-###### Current Software 
-- CasaOS 
-- NextCloud 
-- Docker 
-- Timeshift 
-- Fish Shell 
-- UFW 
-- Portainer 
+**Current Software Stack:**
+- CasaOS
+- NextCloud
+- Docker
+- Timeshift
+- Fish Shell
+- UFW
+- Portainer
 - Syncthing
 
+---
 
+## 🛠️ New Software Stack
 
-#### New Software Requirements
+### 🥧 Raspberry Pi 5 (Service Node)
+- Grafana
+- Scaphandre
+- Prometheus
+- NUT-Exporter
 
-##### UPS 
-CyberPower CP1500AVRLCD3
-CyberPower CP1500PFCLCD
-Check for Costco, will be cheaper
-NUT client on Proxmox
-###### Pi 5 (service nod)
-- Graphana (Dashboard) 
-- Scaphandre 
-- Prometheus 
-- NUT-Exporter 
-
-##### DevOps 
+### 🚀 DevOps
 - Kubernetes (Talos)
-- ArgoCD 
-- GitLab 
-- CI runners 
-- Podman 
+- ArgoCD
+- GitLab
+- CI runners
+- Podman
 
-
-##### Networking
-- Netgear Router (AP)
-- Router-on-a-stick 
+### 🌐 Networking
+- Netgear Router (AP mode)
+- Router-on-a-stick
 - Pi-Hole (DNS)
 - PiVPN (WireGuard)
 
-##### Services
-- Proxmox Cluster
-- Torr Node
+### 🎯 Compute Nodes
+- Proxmox VE (PVE)
+- Tor Node
 - VDI (AD)
-- Wordpress 
+- WordPress
 - Minecraft
-- Searxng 
+- SearxNG
 - Samba
 - Nginx
-- Ansible
+- NUT client 
+- cloud.init
 
-##### NAS 
+### 💾 NAS
 - TrueNAS
 - Plex/Jellyfin
-- Nextcloud 
-- zfs snapshot / rsnapshot
+- ZFS snapshots / rsnapshot
 
+### Mobile 
+- Filebrowser
 
+### Don't know what it is 
+- Ansible 
+- Corosync 
+- NFS/iSCSI
 
-### Top down of the server rack
+---
 
-| Unit | Device | Mounting Method | Height Used |
-|------|--------|----------------|-------------|
-| Top | 7-Inch Screen + Mesh Pod | Sitting loosely on top of the metal cabinet | 0U |
+## 🏗️ Rack Layout (Top to Bottom)
+
+| Unit | Device | Mounting Method | Height |
+|------|--------|----------------|--------|
+| Top | 7" Screen + Mesh Pod | Sitting on top of cabinet | 0U |
 | U12 | Venting Panel | Screwed into rails | 1U |
 | U11 | MikroTik Switch | Hard Mount (RMK-2/10 Ears) | 1U |
 | U10 | Patch Panel | Screwed into rails | 1U |
-| U09 | "Services" Shelf | 1U Shelf holding: N100 Firewall (Left) + Pi 5 (Right) | 1U |
-| U08 | ThinkCentre Stack | Top of the stack (Node 3) | Combined |
-| U07 | ThinkCentre Stack | Middle of the stack (Node 2) | Combined |
-| U06 | ThinkCentre Stack | 1U Shelf holding Node 1 (Bottom) | 3U Total |
-| U05 | NAS (Jonsbo N2) | Top of NAS | Combined |
-| U04 | NAS (Jonsbo N2) | Body of NAS | Combined |
-| U03 | NAS (Jonsbo N2) | Body of NAS | Combined |
-| U02 | NAS (Jonsbo N2) | Body of NAS | Combined |
-| U01 | NAS (Jonsbo N2) | Sits on Cabinet Floor | 5U Total |
+| U09 | Services Shelf | 1U shelf: N100 Firewall (left) + Pi 5 (right) | 1U |
+| U08-U06 | ThinkCentre Stack | Nodes 3, 2, 1 on 1U shelf | 3U |
+| U05-U01 | NAS (Jonsbo N2) | Sits on cabinet floor | 5U |
 
+### 📐 Rack Space Calculation
+- 1U = 4.45 cm
+- NAS: 22.25 cm (5U)
+- Nodes: 17.8 cm (3U)
+- Switch: 4.45 cm (1U)
+- Patch Panel: 4.45 cm (1U)
+- Vent: 4.45 cm (1U)
+- **Total: 53.4 cm (12U)**
 
-##### U-Tetris Math
-1U (4.45 cm)
+---
 
-22.25 (NAS) + 17.8 (Nodes) + 4.45 (Switch) + 4.45 (Patch) + 4.45 (Vent) = 53.4 cm.
-Total Rack Height Available (12U): 53.4 cm.
+## 🖥️ Hardware Components
 
- 
+### 💻 Existing Hardware
+- **Eero 6+ Mesh Pod**
+- **Netgear Router AC1750** (1750Mbps, from Explorer ISP)
+- **Dell Precision 3620 Tower** - i7-7700 Quad Core 3.6GHz, 32GB RAM, 1TB NVMe, NVS310 GPU  
+  [$419 CAD](https://www.amazon.ca/Dell-Optiplex-7050-Excellent-Condition/dp/B0F854GHFB)
+- **Lenovo ThinkCentre M710Q** - i5-7400T 2.4GHz, 8GB RAM, 500GB HDD  
+  [$102.14 CAD](https://www.ebay.ca/itm/197901648050)
+- **Lenovo ThinkCentre M715Q** - AMD Pro A10-9700E, 8GB RAM, 500GB HD  
+  [$99.98 CAD](https://www.ebay.ca/itm/155474578754)
+- **Lenovo ThinkCentre M710q** - i5-7500T, 8GB DDR4, Intel AC8265 (no HDD)  
+  [$121.74 CAD](https://www.ebay.ca/itm/376693720411)
 
+### 💿 Storage
+- **SanDisk SSD Plus 500GB** (opened box) - [$59.27 CAD](https://www.amazon.ca/dp/B0F4Y2VR8S)
+- **SanDisk SSD Plus 500GB** (new) - [$64.99 CAD](https://www.amazon.ca/dp/B0F4Y2VR8S)
+- **Patriot P220 128GB SATA SSD** - [$24.99 CAD](https://www.amazon.ca/dp/B0BS9W3T48)
 
-#### Hardware
-Connected to eero 6+ mesh pod
+### 🎮 Raspberry Pi 5 Setup
+- **Raspberry Pi 5 8GB** (2023 model) - [$133.69 CAD](https://www.amazon.ca/dp/B0CK2FCG1K)
+- **GeeekPi P33 M.2 NVMe PoE+ HAT** - [$48.98 CAD](https://www.amazon.ca/dp/B0D8JC3MXQ)
 
-Netgear Router AC1750, 1750Mbps | Provided by Explorer ISP
+---
 
-Dell Precision 3620 Tower i7-7700 Quad Core 3.6Ghz 32B 1TB NVME GPU NvS310 | 419$ amazon.ca | [link][https://www.amazon.ca/Dell-Optiplex-7050-Excellent-Condition/dp/B0F854GHFB/ref=sr_1_1?sr=8-1]
+## 🏢 Rack Infrastructure
 
-Lenovo ThinkCentre M710Q Tiny Micro i5-7400T 2.4Ghz 8GB RAM with 500GB HDD | 102.14$ [link][https://www.ebay.ca/itm/197901648050?mkrid=711-127632-2357-0&sssrc=4429486&stype=1&var=]
+- **GeeekPi 12U Server Cabinet** - [$209.94 CAD](https://www.amazon.ca/GeeekPi-Cabinet-Equipment-RackMate-Rackmount/dp/B0DT2XM22G)
+- **GeeekPi 12-Port Patch Panel** - [$23.79 CAD](https://www.amazon.ca/dp/B0D5XPNHHF)
+- **GeeekPi 1U Server Rack Shelf** - [$28.04 CAD](https://www.amazon.ca/dp/B0D5XGSPXD)
+- **PDU 3-Socket** - [$42.72 CAD](https://www.aliexpress.com/item/1005005963996490.html)
+- **3-Prong 1-to-4 Power Splitter** - [$23.99 CAD](https://www.amazon.ca/dp/B0CH9NHFHS)
+- **Freenove 7" Touchscreen Monitor** - [$47.96 CAD](https://www.amazon.ca/dp/B0BPP6MFFJ)
 
-Lenovo ThinkCentre M715Q AMD Pro A10-9700E 8GB 500GB HD | 99.98$ | ebay.ca [link][https://www.ebay.ca/itm/155474578754?mkrid=711-127632-2357-0&sssrc=4429486&stype=1&var=]
+---
 
-Lenovo ThinkCentre M710q- i5 7500T-8GB DDR4–Intel AC8265 - NO HDD | 121.74$ ebay.ca | [link][http://ebay.ca/itm/376693720411] 
+## 🌐 Network Equipment
 
-SANDISK SSD Plus 500GB Opened Box | 59.27$ | amazon.ca [link][https://www.amazon.ca/dp/B0F4Y2VR8S?ref_=cm_sw_r_cso_cp_apan_dp_KNQYPGB8N57W8ANDHRKR]
+- **MikroTik CRS310-8G+2S+IN** (8x 2.5GbE + 2x SFP+) - [$276 CAD](https://www.amazon.ca/dp/B0CH9NHFHS)
+- **MikroTik RMK-2/10 Rack Mount Kit** - [$33.52 CAD](https://www.shop.wirelessnetware.ca/accessories/516-rmk-210-4752224008688.html)
+- **Gigabit PoE+ Injector** - [$18.88 CAD](https://www.amazon.ca/Injector-IEEE802-3at-Replacement-TPE-115GI-TL-PoE160S/dp/B00NRF9GQO)
 
-SANDISK SSD Plus 500GB | 64.99$ | amazon.ca [link][https://www.amazon.ca/dp/B0F4Y2VR8S?ref_=cm_sw_r_cso_cp_apan_dp_KNQYPGB8N57W8ANDHRKR]
+### 🔥 Firewall Hardware
+- **Fanless N100 Mini PC** - 4x 2.5GbE, DDR4, NVMe, Type-C - [$245.99 USD](https://www.aliexpress.com/item/1005010292635214.html)
+- **Patriot P320 128GB NVMe** - [$33.99 CAD](https://www.amazon.ca/dp/B0D4RD18YV)
+- **Crucial 8GB DDR4 3200MHz SO-DIMM** - [eBay.ca](https://www.ebay.ca/itm/365735557774)
+- **2.5Gb Network Adapter** (M.2 A+E/Mini PCIe to RJ45) - [$18.79 USD](https://www.aliexpress.com/item/1005008820106326.html)
 
-Patriot P220 128GB Internal SSD - SATA 3 2.5 [link][https://www.amazon.ca/dp/B0BS9W3T48?ref_=cm_sw_r_cso_cp_apan_dp_AZNB3RMGACHG8HSKY6DT] | 24.99$ Amazon.ca
+### 🖥️ Alternative N100 Option
+- **N100 Linux Industrial Embedded PC** - 4x 2.5GbE - [$283.29 USD](https://www.aliexpress.com/item/1005005404120290.html)
 
-Raspberry Pi 5 8GB 2023 | 133.69$ | amazon.ca [link][https://www.amazon.ca/dp/B0CK2FCG1K?ref_=cm_sw_r_cso_cp_apan_dp_M2HK0C5AXXZCHN42H14E]
+---
 
-GeeekPi P33 M.2 NVME M-Key PoE+ | 48.98$ | amazon.ca [link][https://www.amazon.ca/dp/B0D8JC3MXQ?ref_=cm_sw_r_cso_cp_apan_dp_TY1G9N40WHAF650DFV1E]
+## 💾 NAS Specifications
 
+- **Case:** Jonsbo N2 NAS - [$169.05 USD](https://www.aliexpress.com/item/1005007766481140.html)
+- **Motherboard + CPU:** N5105 Industrial Board - [$160.38 USD](https://www.aliexpress.com/item/1005006221619148.html)
+- **Case Fan:** Noctua NF-A9 PWM - [$25.05 CAD](https://www.amazon.ca/dp/B00RUZ059O)
+- **CPU Fan:** Noctua NF-A4x20 - [$29.79 USD](https://www.aliexpress.com/item/1005006690066510.html)
+- **PSU:** GAMEMAX 650W 80+ Gold Fully Modular SFX - [$144.49 CAD](https://www.amazon.ca/dp/B0F9NR7G17)
+- **Memory:** Crucial 8GB x2 DDR4 3200MHz SO-DIMM - [$93.69 CAD](https://www.ebay.ca/itm/365735557774)
+- **SATA Cables:** 6-pack - [$6.79 USD](https://www.aliexpress.com/item/1005007523507363.html)
+- **Boot Drive:** 1TB NVMe M.2 PCIe 3.0x4 (3,500MB/s) - [$107.99 CAD](https://www.amazon.ca/dp/B0DTY976K3)
+- **Storage:** 1TB 3.5" HDD - $25 CAD (MDG Computers)
 
-#### Rack
-GeeekPi 12U Server Cabinet | 209.94$ | amazon.ca [link][https://www.amazon.ca/GeeekPi-Cabinet-Equipment-RackMate-Rackmount/dp/B0DT2XM22G/ref=sr_1_1_sspa?s=electronics&sr=1-1-spons&sp_csd=d2lkZ2V0TmFtZT1zcF9hdGY&psc=1]
+---
 
-GeeekPi 12 Port Patch Panel | 23.79$ | amazon.ca [link][https://www.amazon.ca/dp/B0D5XPNHHF?ref_=cm_sw_r_cso_cp_apan_dp_TMZ63EQ1FNC02H6FC7M3]
+## 💰 Total Investment
 
-GeeekPi 1U Server Rack Shelf | 28.04$ | amazon.ca [link][https://www.amazon.ca/dp/B0D5XGSPXD?ref_=cm_sw_r_cso_cp_apan_dp_TT262C4WDSHKJ7W1254J]
-
-PDU 3 Socket 42.72$ | aliexpress.com [link][https://www.aliexpress.com/item/1005005963996490.html]
-
-3 Prong 1-to-4 Power Cord Splitter Cable | 23.99$ | amazon.ca [link][https://www.amazon.ca/Mikrotik-CRS310-8G-2S-IN-MikroTik/dp/B0CH9NHFHS?source=ps-sl-shoppingads-lpcontext&ref_=fplfs&psc=1&smid=A1DVY69FJDQ80C]
-
-Freenove 7 Inch Touchscreen Monitor | 47.96$ | amazon.ca [link][https://www.amazon.ca/dp/B0BPP6MFFJ?ref_=cm_sw_r_cso_cp_apan_dp_AH6BYX1167Z1GPQD24CM]
-
-
-
-#### Network
-MikroTik CRS310-8G+2S+in 276$ | amazon.ca [link][https://www.amazon.ca/Mikrotik-CRS310-8G-2S-IN-MikroTik/dp/B0CH9NHFHS?source=ps-sl-shoppingads-lpcontext&ref_=fplfs&psc=1&smid=A1DVY69FJDQ80C]
-
-Mikrotik RMK-2/10 Rack Mount | 33.52$ | wirelessnetware.ca [link][https://www.shop.wirelessnetware.ca/accessories/516-rmk-210-4752224008688.html]
-
-
-Gigabit PoE+ Injector 18.88$ | amazon.ca [link][https://www.amazon.ca/Injector-IEEE802-3at-Replacement-TPE-115GI-TL-PoE160S/dp/B00NRF9GQO/ref=asc_df_B00NRF9GQO?mcid=c5b2d3709dca3350af73dc68296d4834&hvadid=706724917389&hvpos=&hvnetw=g&hvrand=14741287802779362230&hvpone=&hvptwo=&hvqmt=&hvdev=c&hvdvcmdl=&hvlocint=&hvlocphy=9220713&hvtargid=pla-568844063746&psc=1&hvocijid=14741287802779362230-B00NRF9GQO-&hvexpln=0]
-
-2.5Gb Network Adapter M.2 A+E/Mini PCIE to RJ45 | 18.79$ | aliexpress.com [link][https://www.aliexpress.com/item/1005008820106326.html?spm=a2g0o.productlist.main.4.14f3CSoWCSoW7p&algo_pvid=9ea1b4c1-c266-4f9c-a9bd-bf1601744de0&pdp_ext_f=%7B%22order%22%3A%2210%22%2C%22eval%22%3A%221%22%2C%22fromPage%22%3A%22search%22%7D&utparam-url=scene%3Asearch%7Cquery_from%3A%7Cx_object_id%3A1005008820106326%7C_p_origin_prod%3A]
-N100 Linux Industrial Embedded Computer 4x2.5G | 283.29$ | aliexpress.com [link][https://www.aliexpress.com/item/1005005404120290.html?invitationCode=VjJnQWNhT01xcC80d24rVHZxZWNoOGNTMG56SUU2RytUNDgxazRGL2NkS2VQemFTZUJrNWVWT0s1MU1hdTAyWg&srcSns=sns_Copy&spreadType=socialShare&social_params=21986607541&bizType=ProductDetail&spreadCode=VjJnQWNhT01xcC80d24rVHZxZWNoOGNTMG56SUU2RytUNDgxazRGL2NkS2VQemFTZUJrNWVWT0s1MU1hdTAyWg&aff_fcid=ebdb42e46d7b4693816e537ded0ba360-1764561068538-06639-_mraEl4l&tt=MG&aff_fsk=_mraEl4l&aff_platform=default&sk=_mraEl4l&aff_trace_key=ebdb42e46d7b4693816e537ded0ba360-1764561068538-06639-_mraEl4l&shareId=21986607541&businessType=ProductDetail&platform=AE&terminal_id=5a00cd0046d34917859afd9a27ad68fd&afSmartRedirect=y]
-
-
-
-##### NAS Specs 
-Case: JONSBO N2 NAS | 169.05$ | aliexpress.com [link][https://www.aliexpress.com/item/1005007766481140.html?invitationCode=VjJnQWNhT01xcC8rSThnRkU0MlNBTWNTMG56SUU2RytUNDgxazRGL2NkS2VQemFTZUJrNWVWT0s1MU1hdTAyWg&srcSns=sns_Copy&spreadType=socialShare&social_params=21994506815&bizType=ProductDetail&spreadCode=VjJnQWNhT01xcC8rSThnRkU0MlNBTWNTMG56SUU2RytUNDgxazRGL2NkS2VQemFTZUJrNWVWT0s1MU1hdTAyWg&aff_fcid=81ec494306124fbabb5b5532d75c08a5-1764561067902-02333-_mOSgvhX&tt=MG&aff_fsk=_mOSgvhX&aff_platform=default&sk=_mOSgvhX&aff_trace_key=81ec494306124fbabb5b5532d75c08a5-1764561067902-02333-_mOSgvhX&shareId=21994506815&businessType=ProductDetail&platform=AE&terminal_id=5a00cd0046d34917859afd9a27ad68fd&afSmartRedirect=y]
-
-Motherboard + CPU: N5105 Industrial Motherboard | 160.38$ | aliexpress.com [link][https://www.aliexpress.com/item/1005006221619148.html?invitationCode=ZG9ZZGs2a29nUm1rUTRnemdvenZRc2NTMG56SUU2RytUNDgxazRGL2NkS2VQemFTZUJrNWVWT0s1MU1hdTAyWg&srcSns=sns_Copy&spreadType=socialShare&social_params=21997576728&bizType=ProductDetail&spreadCode=ZG9ZZGs2a29nUm1rUTRnemdvenZRc2NTMG56SUU2RytUNDgxazRGL2NkS2VQemFTZUJrNWVWT0s1MU1hdTAyWg&aff_fcid=11d34d826be44bdca3ce4ea5b11fa659-1764475371352-07846-_mtpTlVJ&tt=MG&aff_fsk=_mtpTlVJ&aff_platform=default&sk=_mtpTlVJ&aff_trace_key=11d34d826be44bdca3ce4ea5b11fa659-1764475371352-07846-_mtpTlVJ&shareId=21997576728&businessType=ProductDetail&platform=AE&terminal_id=5a00cd0046d34917859afd9a27ad68fd&afSmartRedirect=y]
-
-
-Case Fan: Noctua NF-A9 PWM | 25.05$  | amazon.ca [link][https://www.amazon.ca/dp/B00RUZ059O?ref_=cm_sw_r_cso_cp_apan_dp_TNAJA8BGTY87N7G4GYGD]
-
-
-CPU Fan: Noctua NF-A4x20 | 29.79$ | aliexpress.com [link][https://www.aliexpress.com/item/1005006690066510.html?invitationCode=ZG9ZZGs2a29nUm1BaG9tTldBMThUTWNTMG56SUU2RytUNDgxazRGL2NkS2VQemFTZUJrNWVWT0s1MU1hdTAyWg&srcSns=sns_Copy&spreadType=socialShare&social_params=21993743625&bizType=ProductDetail&spreadCode=ZG9ZZGs2a29nUm1BaG9tTldBMThUTWNTMG56SUU2RytUNDgxazRGL2NkS2VQemFTZUJrNWVWT0s1MU1hdTAyWg&aff_fcid=a7ed093179cd4545aa99603d06564bc5-1764475372039-00341-_mNTMNy9&tt=MG&aff_fsk=_mNTMNy9&aff_platform=default&sk=_mNTMNy9&aff_trace_key=a7ed093179cd4545aa99603d06564bc5-1764475372039-00341-_mNTMNy9&shareId=21993743625&businessType=ProductDetail&platform=AE&terminal_id=5a00cd0046d34917859afd9a27ad68fd&afSmartRedirect=y]
-
-
-PSU: GAMEMAX 650W 80+ Gold Fully Modular SFX | 144.49$ | amazon.ca [link][https://www.amazon.ca/dp/B0F9NR7G17?ref_=cm_sw_r_cso_cp_apan_dp_PH67FNBZWJ218P1PK691]
-
-Memory: Crucial 8GBx2 DDR4 3200 MHz SO-DIMM | 93.69$ | ebay.ca  [link][https://www.ebay.ca/itm/365735557774?mkrid=711-127632-2357-0&sssrc=4429486&stype=1&var=635510335212]
-
-Sata Cables: 6pcs Cable | 6.79$ | aliexpress.com [link][https://www.aliexpress.com/item/1005007523507363.html?invitationCode=ZG9ZZGs2a29nUmxjRVY1UDFjN0dOY2NTMG56SUU2RytUNDgxazRGL2NkS2VQemFTZUJrNWVWT0s1MU1hdTAyWg&srcSns=sns_Copy&spreadType=socialShare&social_params=21993743699&bizType=ProductDetail&spreadCode=ZG9ZZGs2a29nUmxjRVY1UDFjN0dOY2NTMG56SUU2RytUNDgxazRGL2NkS2VQemFTZUJrNWVWT0s1MU1hdTAyWg&aff_fcid=707041ef4f354b0ebe1121e792c1b2e9-1764475372743-01332-_mOqgIE5&tt=MG&aff_fsk=_mOqgIE5&aff_platform=default&sk=_mOqgIE5&aff_trace_key=707041ef4f354b0ebe1121e792c1b2e9-1764475372743-01332-_mOqgIE5&shareId=21993743699&businessType=ProductDetail&platform=AE&terminal_id=5a00cd0046d34917859afd9a27ad68fd&afSmartRedirect=y]
-
-Hard Drive 1TB 3.5inch | 25$ | MDG Computers 
-
-1TB NVMe SSD M.2 SSD PCIe 3.0x4 Read 3,500MB/s | 107.99$ | amazon.ca [link][https://www.amazon.ca/dp/B0DTY976K3?ref_=cm_sw_r_cso_cp_apan_dp_ESB6ZQZRBSZYSZWYZ2DC]
-
-
-
-
-
-
-
-
-
-
+Building a homelab that balances performance, expandability, and power efficiency 
