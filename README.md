@@ -12,9 +12,12 @@ On the software side, I was seeing some serious limitation to my setup, CasaOS i
 
 Unrelated Issue, I was having a bit of trouble hosting steam-cli for my games. So I decided to install a GUI (KDE) to just have steam so I can install my games. HUGE issues started to happen. My GPU NvS310 stopped working, and steam was very unhappy that it couldn't use gpu accelration properly, Not only that, because I intalled KDE, it uses a different network manager called "Network Manager" (you don't say) and debian server uses ifupdown. This broke so many things; one of the most annoying is that my containers didin't know anymore what default gateway to use anymore, so they would just make one. Making them not possible to connect to the internet anymore for the server. So everytime I updated and rebooted. I would need physically run these commands: 
 
-- 
-- 
-- 
+@bash
+nmcli device show enp0s31f6
+sudo ip route flush dev vethe90e8b0 
+@end
+
+ 
 
 So stupid and annoying as I couln't SSH and fix it. Well now I'm embarking a new journay with my now upgraded Homelab!
 
@@ -36,10 +39,13 @@ Since I wanted a managed switch 10inch, there is only two option of well known b
 
 Requirements Gathering 
 
+Current Hardware
+
 - Eero Mesh pod
 - Dell Precision 3620 Tower 
 - Lenovo ThinkCentre M710Q  
 - Raspberry Pi 5 
+- Netgear Router AC1750, 1750Mbps
 
 - The Server is using the Mesh network instead of being connected directly to the router, (Can use EoP) 
 
@@ -67,46 +73,74 @@ Requirements Gathering
 - Timeshift 
 - Fish Shell 
 - UFW 
+- Portainer 
+- Syncthing
 
 
 
-###### Capable to run these service: 
-- proxmox 
-- kubernetes + TalOS
-- wordpress 
-- minecraft 
-- ansible
-- nginx 
-- podman 
-- searxng 
-- samba 
-- steam-cli
+#### New Software Requirements
+
+##### UPS 
+CyberPower CP1500AVRLCD3
+CyberPower CP1500PFCLCD
+Check for Costco, will be cheaper
+NUT client on Proxmox
+###### Pi 5 (service nod)
+- Graphana (Dashboard) 
+- Scaphandre 
+- Prometheus 
+- NUT-Exporter 
+
+##### DevOps 
+- Kubernetes (Talos)
+- ArgoCD 
+- GitLab 
+- CI runners 
+- Podman 
+
+
+##### Networking
+- Netgear Router (AP)
+- Router-on-a-stick 
+- Pi-Hole (DNS)
+- PiVPN (WireGuard)
+
+##### Services
+- Proxmox Cluster
+- Torr Node
+- VDI (AD)
+- Wordpress 
+- Minecraft
+- Searxng 
+- Samba
+- Nginx
+- Ansible
+
+##### NAS 
+- TrueNAS
+- Plex/Jellyfin
+- Nextcloud 
 - zfs snapshot / rsnapshot
 
 
 
-###### Reddit guy info: (not included into the article) 
-A bit about software:
-- basically everything is configured via ansible
-- all services (adguard, rsnapshot, samba, nginx, searxng, baikal, forgejo, syncthing, mc, etc...) are running in rootless podman containers.
-- zfs for nas drives 
-
-Logical Design 
-Physical Design 
-
 ### Top down of the server rack
-Screen - Mesh } On top 
-PDU } Behind U12/U11 (Top)
-1U Venting Pannel
-Switch } 1U Mounted
-Patch Pannel } 0.5U 
-Raspberry PI } O.5U Rack Shelf 
-ThinkCentre } 1U Rack Shelf
-ThinkCentre } 1U Rack Shelf
-NAS } 5U At the bottom
-UPS - Dell Tower } Sitting Next to it 
 
-
+| Unit | Device | Mounting Method | Height Used |
+|------|--------|----------------|-------------|
+| Top | 7-Inch Screen + Mesh Pod | Sitting loosely on top of the metal cabinet | 0U |
+| U12 | Venting Panel | Screwed into rails | 1U |
+| U11 | MikroTik Switch | Hard Mount (RMK-2/10 Ears) | 1U |
+| U10 | Patch Panel | Screwed into rails | 1U |
+| U09 | "Services" Shelf | 1U Shelf holding: N100 Firewall (Left) + Pi 5 (Right) | 1U |
+| U08 | ThinkCentre Stack | Top of the stack (Node 3) | Combined |
+| U07 | ThinkCentre Stack | Middle of the stack (Node 2) | Combined |
+| U06 | ThinkCentre Stack | 1U Shelf holding Node 1 (Bottom) | 3U Total |
+| U05 | NAS (Jonsbo N2) | Top of NAS | Combined |
+| U04 | NAS (Jonsbo N2) | Body of NAS | Combined |
+| U03 | NAS (Jonsbo N2) | Body of NAS | Combined |
+| U02 | NAS (Jonsbo N2) | Body of NAS | Combined |
+| U01 | NAS (Jonsbo N2) | Sits on Cabinet Floor | 5U Total |
 
 
 ##### U-Tetris Math
@@ -115,40 +149,19 @@ UPS - Dell Tower } Sitting Next to it
 22.25 (NAS) + 17.8 (Nodes) + 4.45 (Switch) + 4.45 (Patch) + 4.45 (Vent) = 53.4 cm.
 Total Rack Height Available (12U): 53.4 cm.
 
-### Software 
-- Proxmox 
-- TrueNAS
-- Kubernetes Cluster + Talos
-- Active Directory 
  
-
-### Software 
-Proxmox 
-TrueNAS
-Kubernetes Cluster + Talos
-Active Directory 
-Virtualized Linux VMs 
-Torr Node 
-Nextcloud 
-Plex Media Streaming 
-Scaphandre. It acts as a Prometheus exporter that tracks power consumption metrics at the process and host level, which you can visualize in Grafana.
-
-Eero (Router) 
-DMZ (Firewall)
-VLAN Tagging (Switch)
-Raspberry-Pi (jump host)
-
-
 
 
 #### Current Hardware
-Connected to Eero Mesh pod
+Connected to eero 6+ mesh pod 
 
 Dell Precision 3620 Tower i7-7700 Quad Core 3.6Ghz 32B 1TB NVME GPU NvS310 | 419$ amazon.ca | [link][https://www.amazon.ca/Dell-Optiplex-7050-Excellent-Condition/dp/B0F854GHFB/ref=sr_1_1?sr=8-1]
 
 Lenovo ThinkCentre M710Q Tiny Micro i5-7400T 2.4Ghz 8GB RAM with 500GB HDD | 102.14$ [link][https://www.ebay.ca/itm/197901648050?mkrid=711-127632-2357-0&sssrc=4429486&stype=1&var=]
 
 Lenovo ThinkCentre M715Q AMD Pro A10-9700E 8GB 500GB HD | ebay.ca [link][https://www.ebay.ca/itm/155474578754?mkrid=711-127632-2357-0&sssrc=4429486&stype=1&var=]
+Lenovo ThinkCentre M710q- i5 7500T-8GB DDR4–Intel AC8265 - NO HDD [link][http://ebay.ca/itm/376693720411]
+
 
 Raspberry Pi 5 8GB 2023 | 133.69$ | amazon.ca [link][https://www.amazon.ca/dp/B0CK2FCG1K?ref_=cm_sw_r_cso_cp_apan_dp_M2HK0C5AXXZCHN42H14E]
 
@@ -180,18 +193,17 @@ MikroTik CRS310-8G+2S+in 276$ | amazon.ca [link][https://www.amazon.ca/Mikrotik-
 
 Mikrotik RMK-2/10 Rack Mount | 33.52$ | wirelessnetware.ca [link][https://www.shop.wirelessnetware.ca/accessories/516-rmk-210-4752224008688.html]
 
-Mellanox MCX311A-XCAT 10G Ethernet 10GbE SFP+ PCI-E NIC | 33.41$ | ebay.ca [link][https://www.ebay.ca/itm/297438405607?_skw=ConnectX-3+MCX311A&epid=11030189803&itmmeta=01KB8TJV9W92ADMM5SSMV38FNP&hash=item4540b5e3e7:g:xZoAAOSwizdoXkxh&itmprp=enc%3AAQAKAAAA8FkggFvd1GGDu0w3yXCmi1eTct2eNn9h6OhuqC%2FjnAYutFJm2Ep%2Fj8fpI1E%2BFjMXRYG3iWEjEGe6bQDvXEDajpdzkE8HiSsnx5X74b7OYmO0wE4zeD%2BxMUunZeruxNpChEme7uVZ4d1yPbkgebyZnMYtkIn2oq46sg89aw3z0LW76ToXTz9B%2FD9SsT3Bc0Nvo59%2Bl49ONf%2BOt%2BmXnc3k6TANXKgXbvjP2uGduV0m%2BP%2BUy1yPUdIewALMSiK03%2FjDaA5zkGy%2FhSC8XznlbYUAE4jT7HouMpAL6MjRudKGEAQcWboFEMPDyFw%2BJeuB3mgJ4w%3D%3D%7Ctkp%3ABFBMiLXLmtpm]
 
 Gigabit PoE+ Injector 18.88$ | amazon.ca [link][https://www.amazon.ca/Injector-IEEE802-3at-Replacement-TPE-115GI-TL-PoE160S/dp/B00NRF9GQO/ref=asc_df_B00NRF9GQO?mcid=c5b2d3709dca3350af73dc68296d4834&hvadid=706724917389&hvpos=&hvnetw=g&hvrand=14741287802779362230&hvpone=&hvptwo=&hvqmt=&hvdev=c&hvdvcmdl=&hvlocint=&hvlocphy=9220713&hvtargid=pla-568844063746&psc=1&hvocijid=14741287802779362230-B00NRF9GQO-&hvexpln=0]
 
 2.5Gb Network Adapter M.2 A+E/Mini PCIE to RJ45 | 18.79$ | aliexpress.com [link][https://www.aliexpress.com/item/1005008820106326.html?spm=a2g0o.productlist.main.4.14f3CSoWCSoW7p&algo_pvid=9ea1b4c1-c266-4f9c-a9bd-bf1601744de0&pdp_ext_f=%7B%22order%22%3A%2210%22%2C%22eval%22%3A%221%22%2C%22fromPage%22%3A%22search%22%7D&utparam-url=scene%3Asearch%7Cquery_from%3A%7Cx_object_id%3A1005008820106326%7C_p_origin_prod%3A]
-
-
+N100 Linux Industrial Embedded Computer 4x2.5G [link][https://www.aliexpress.com/item/1005005404120290.html?invitationCode=VjJnQWNhT01xcC80d24rVHZxZWNoOGNTMG56SUU2RytUNDgxazRGL2NkS2VQemFTZUJrNWVWT0s1MU1hdTAyWg&srcSns=sns_Copy&spreadType=socialShare&social_params=21986607541&bizType=ProductDetail&spreadCode=VjJnQWNhT01xcC80d24rVHZxZWNoOGNTMG56SUU2RytUNDgxazRGL2NkS2VQemFTZUJrNWVWT0s1MU1hdTAyWg&aff_fcid=ebdb42e46d7b4693816e537ded0ba360-1764561068538-06639-_mraEl4l&tt=MG&aff_fsk=_mraEl4l&aff_platform=default&sk=_mraEl4l&aff_trace_key=ebdb42e46d7b4693816e537ded0ba360-1764561068538-06639-_mraEl4l&shareId=21986607541&businessType=ProductDetail&platform=AE&terminal_id=5a00cd0046d34917859afd9a27ad68fd&afSmartRedirect=y]
 
 
 
 ##### NAS Specs 
-Case: JONSBO N2 NAS | 169.05$ | aliexpress.com [link][]
+Case: JONSBO N2 NAS | 169.05$ | aliexpress.com [link][https://www.aliexpress.com/item/1005007766481140.html?invitationCode=VjJnQWNhT01xcC8rSThnRkU0MlNBTWNTMG56SUU2RytUNDgxazRGL2NkS2VQemFTZUJrNWVWT0s1MU1hdTAyWg&srcSns=sns_Copy&spreadType=socialShare&social_params=21994506815&bizType=ProductDetail&spreadCode=VjJnQWNhT01xcC8rSThnRkU0MlNBTWNTMG56SUU2RytUNDgxazRGL2NkS2VQemFTZUJrNWVWT0s1MU1hdTAyWg&aff_fcid=81ec494306124fbabb5b5532d75c08a5-1764561067902-02333-_mOSgvhX&tt=MG&aff_fsk=_mOSgvhX&aff_platform=default&sk=_mOSgvhX&aff_trace_key=81ec494306124fbabb5b5532d75c08a5-1764561067902-02333-_mOSgvhX&shareId=21994506815&businessType=ProductDetail&platform=AE&terminal_id=5a00cd0046d34917859afd9a27ad68fd&afSmartRedirect=y]
+
 Motherboard + CPU: N5105 Industrial Motherboard | 160.38$ | aliexpress.com [link][https://www.aliexpress.com/item/1005006221619148.html?invitationCode=ZG9ZZGs2a29nUm1rUTRnemdvenZRc2NTMG56SUU2RytUNDgxazRGL2NkS2VQemFTZUJrNWVWT0s1MU1hdTAyWg&srcSns=sns_Copy&spreadType=socialShare&social_params=21997576728&bizType=ProductDetail&spreadCode=ZG9ZZGs2a29nUm1rUTRnemdvenZRc2NTMG56SUU2RytUNDgxazRGL2NkS2VQemFTZUJrNWVWT0s1MU1hdTAyWg&aff_fcid=11d34d826be44bdca3ce4ea5b11fa659-1764475371352-07846-_mtpTlVJ&tt=MG&aff_fsk=_mtpTlVJ&aff_platform=default&sk=_mtpTlVJ&aff_trace_key=11d34d826be44bdca3ce4ea5b11fa659-1764475371352-07846-_mtpTlVJ&shareId=21997576728&businessType=ProductDetail&platform=AE&terminal_id=5a00cd0046d34917859afd9a27ad68fd&afSmartRedirect=y]
 
 
