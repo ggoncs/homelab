@@ -22,14 +22,14 @@ So stupid and annoying as I couln't SSH and fix it. Well now I'm embarking a new
 
 ##### Requirements:
 
-RAID 5 | ✅
-8 port managed switch 2.5GBs ✅
-bastion host (can be run in a container with opensense) ✅
-12U rack server ✅
-PFsense (bonus) ❌ 
+- RAID 5 ✅
+- 8 port managed switch 2.5GBs ✅
+- bastion host esque (can be run in a container with opensense) ✅
+- 12U rack server ✅
+- PFsense (bonus) ❌ 
 Buying a firewall with pfsense built-in is really expensive, and honestly overkill for now, also right now at home I am not full admin of the network so I currently do not have need for it.
 
-EoP as my server would be in the basement ❌ 
+- EoP as my server would be in the basement ❌ 
 Since I wanted a managed switch 10inch, there is only two option of well known brands, Mintrokit and QNAP. QNAP supports PoE and 2.5GBs but, is double the price. therefore a deal breaker and buying a PoE+ injector is not that expensive and I don't loose that much perfomance as the only device needing it is Rasberry Pi that only has 1GB/s speed
 
 
@@ -61,7 +61,12 @@ Requirements Gathering
 
 (Analysis)
 ###### Current Software 
-
+- CasaOS 
+- NextCloud 
+- Docker 
+- Timeshift 
+- Fish Shell 
+- UFW 
 
 
 
@@ -102,11 +107,20 @@ NAS } 5U At the bottom
 UPS - Dell Tower } Sitting Next to it 
 
 
+
+
 ##### U-Tetris Math
 1U (4.45 cm)
 
 22.25 (NAS) + 17.8 (Nodes) + 4.45 (Switch) + 4.45 (Patch) + 4.45 (Vent) = 53.4 cm.
 Total Rack Height Available (12U): 53.4 cm.
+
+### Software 
+- Proxmox 
+- TrueNAS
+- Kubernetes Cluster + Talos
+- Active Directory 
+ 
 
 ### Software 
 Proxmox 
@@ -118,6 +132,13 @@ Torr Node
 Nextcloud 
 Plex Media Streaming 
 Scaphandre. It acts as a Prometheus exporter that tracks power consumption metrics at the process and host level, which you can visualize in Grafana.
+
+Eero (Router) 
+DMZ (Firewall)
+VLAN Tagging (Switch)
+Raspberry-Pi (jump host)
+
+
 
 
 #### Current Hardware
@@ -132,6 +153,7 @@ Lenovo ThinkCentre M715Q AMD Pro A10-9700E 8GB 500GB HD | ebay.ca [link][https:/
 Raspberry Pi 5 8GB 2023 | 133.69$ | amazon.ca [link][https://www.amazon.ca/dp/B0CK2FCG1K?ref_=cm_sw_r_cso_cp_apan_dp_M2HK0C5AXXZCHN42H14E]
 
 GeeekPi P33 M.2 NVME M-Key PoE+ | 48.98$ | amazon.ca [link][https://www.amazon.ca/dp/B0D8JC3MXQ?ref_=cm_sw_r_cso_cp_apan_dp_TY1G9N40WHAF650DFV1E]
+
 
 Installation and Maintenance
 #### Server
