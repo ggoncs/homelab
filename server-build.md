@@ -279,3 +279,63 @@ https://www.reddit.com/r/sffpc/comments/16jq9hn/jonsbo_n2_replacing_stock_fan_wi
 https://www.reddit.com/r/minilab/comments/1otqsva/home_lab_v3_i_swear_im_done_upgrading/
 
 
+### File Tree
+
+homelab/
+├── README.md                 # Main overview (what I just created)
+├── HARDWARE.md              # All hardware specs, prices, and links
+├── docs/
+│   ├── SETUP.md            # Initial setup walkthrough
+│   ├── NETWORK.md          # Network configuration & commands
+│   ├── PROXMOX.md          # Proxmox cluster setup
+│   ├── TRUENAS.md          # TrueNAS configuration
+│   └── MONITORING.md       # Grafana/Prometheus setup
+└── configs/
+    ├── pfsense/            # pfSense config backups
+    ├── proxmox/            # Proxmox configs
+    ├── ansible/            # Ansible playbooks
+    └── kubernetes/         # K8s manifests
+
+
+
+## Fixes needed from Claude
+
+For some reason I don't see I don't see the network config file you made? can you re display it?
+
+Can you change the order of the rack layout 
+
+the screen is attached to Pi! 
+so raberry Pi and firewall are on top (there is only 1 Pi)
+You forgot the N150 firewall (it is sitting on top also)
+Remove the Eero Mesh pod from the diagram
+the NAS is 5U total 
+my thinkcenter nodes 
+3 intel and at the bottom would be amd one
+
+Add this to Mobile section
+PAM + Aegis 2FA
+
+Software to the table list 
+XFC
+LACE
+
+When would I use cloud-init for this homelab 
+is it used in the inital setup, or when I spin up virtual machines after? 
+
+So for my backup solution 
+TrueNAS  
+ZFS Replication (only replicating snapshots)
+And its encrypted (NAS and the PBS)
+Pull replication
+(no rsnapshot)
+
+add r/minilab - Used it for hardware inspiration
+
+
+I'm trying to use ansible, so do factor that in the template files 
+(or is it better to do everything manually to learn the commands)
+
+Ansible:
+Phase 4	Clustering/Networking (Proxmox)
+Phase 5-6	OS and Services (LXC/VM)	
+Ongoing	Consistency/Updates	
