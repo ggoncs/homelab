@@ -1,5 +1,16 @@
 # 🏠 My Homelab Journey
 
+<div align="center">
+  
+![pfSense](https://img.shields.io/badge/pfSense-212121?style=for-the-badge&logo=pfsense&logoColor=white)
+![Proxmox](https://img.shields.io/badge/Proxmox-E57000?style=for-the-badge&logo=proxmox&logoColor=white)
+![TrueNAS](https://img.shields.io/badge/TrueNAS-0095D5?style=for-the-badge&logo=truenas&logoColor=white)
+![MikroTik](https://img.shields.io/badge/MikroTik-293239?style=for-the-badge&logo=mikrotik&logoColor=white)
+
+</div>
+
+---
+
 ## 📖 My Story
 
 This is my second homelab—a direct upgrade from a single Dell Tower running Debian + CasaOS. While the original setup was capable (especially with 32GB DDR4 RAM), I faced critical issues with data redundancy, backups, and storage. I had filled the 1TB NVMe completely, storing all my games for potential re-downloads. This made it impossible to use Timeshift for backups, forcing me to rely on Proton Drive, which defeated the entire purpose of having a local server.
@@ -29,20 +40,90 @@ This was incredibly frustrating since I couldn't SSH in to fix it remotely. Time
 
 ---
 
+## 🎯 Core Technology Stack
+
+This homelab is built on four pillars:
+
+- **🔥 pfSense** - Network security and routing
+- **🔧 MikroTik RouterOS** - Managed switching with 2.5GbE
+- **☁️ Proxmox VE** - Virtualization and cluster management
+- **💾 TrueNAS** - ZFS-based storage with data redundancy
+
+---
+
+## 📊 Network Diagrams
+
+### Logical Network Diagram
+*[Diagram Coming Soon]*
+
+### Physical Rack Layout
+
+```
+┌─────────────────────────────────────────┐
+│  N150 Firewall (on top of rack)        │
+└─────────────────────────────────────────┘
+┌─────────────────────────────────────────┐
+│  7" Screen + Eero Mesh Pod (on top)     │  0U
+└─────────────────────────────────────────┘
+┌─────────────────────────────────────────┐
+│  Venting Panel                          │  U12
+├─────────────────────────────────────────┤
+│  MikroTik CRS310-8G+2S+IN              │  U11
+│  8x 2.5GbE + 2x SFP+                   │
+├─────────────────────────────────────────┤
+│  12-Port Patch Panel                    │  U10
+├─────────────────────────────────────────┤
+│  Raspberry Pi 5 (with 7" screen)       │  U09
+│  8GB RAM, 512GB NVMe, PoE+             │
+├─────────────────────────────────────────┤
+│  ThinkCentre M710Q (Node 4)            │  U08
+│  i5-7500T, 16GB RAM, 500GB SSD         │
+├─────────────────────────────────────────┤
+│  ThinkCentre M715Q (Node 3)            │  U07
+│  AMD A10-9700E, 16GB RAM, 128GB+1TB    │
+├─────────────────────────────────────────┤
+│  ThinkCentre M710Q (Node 2)            │  U06
+│  i5-7500T, 16GB RAM, 500GB SSD         │
+├─────────────────────────────────────────┤
+│  ThinkCentre M710Q (Node 1)            │  U05
+│  i5-7400T, 16GB RAM, 500GB SSD         │
+├─────────────────────────────────────────┤
+│                                         │  U04
+│  Jonsbo N2 NAS                         │  U03
+│  N5105, 16GB RAM                       │  U02
+│  5x 1TB HDD (RAID 5)                   │  U01
+│  1TB NVMe Cache, 650W PSU              │
+└─────────────────────────────────────────┘
+┌─────────────────────────────────────────┐
+│  CyberPower UPS 1500VA                  │
+└─────────────────────────────────────────┘
+```
+
+**Equipment Summary:**
+- **Raspberry Pi 5** - 8GB RAM, PoE, 512GB NVMe, 7" Touchscreen (monitoring/services)
+- **N150 Firewall** - 4x 2.5GbE, 8GB DDR4, 128GB NVMe (pfSense)
+- **MikroTik CRS310** - 8x 2.5GbE + 2x SFP+ managed switch
+- **ThinkCentre Nodes (4x)** - Proxmox cluster with 16GB RAM each
+- **Jonsbo N2 NAS** - TrueNAS with RAID 5 storage
+- **CyberPower UPS** - 1500VA battery backup
+
+---
+
 ## ✅ Requirements
 
 ### Core Requirements
 - ✅ RAID 5 storage
 - ✅ 8-port managed 2.5GbE switch
-- ✅ Bastion host (can run in container with OPNsense)
+- ✅ Jump server
 - ✅ 12U rack server
-- ❌ **pfSense** - Buying a firewall with pfSense is expensive and overkill for now. I'm not the network admin at home, so I don't currently need it.
-- ❌ **Ethernet over Power (EoP)** - Since I wanted a 10-inch managed switch, only Mikrotik and QNAP are well-known options. QNAP supports PoE and 2.5GbE but costs double. A PoE+ injector is affordable, and I only need it for the Raspberry Pi (which maxes at 1Gbps anyway).
+- ✅ Firewall (DMZ)
+- ✅ Clustering
+- ❌ **Ethernet over Power (EoP)** - Since I wanted a 10-inch managed switch, only Mikrotik and QNAP are well-known high-quality options. QNAP supports PoE and 2.5GbE but costs double. A PoE+ injector is affordable, and I only need it for the Raspberry Pi (which maxes at 1Gbps anyway).
 
 ### 📊 Analysis: Current Setup Issues
 
 **Hardware:**
-- Server uses mesh network instead of direct router connection (could use EoP)
+- Server uses mesh network instead of direct router connection (could use EoP or MoCa)
 - Eero mesh pod has only two Ethernet ports—not enough for expansion
 - Current hardware can't communicate effectively (solution: Proxmox cluster)
 - No data redundancy (solution: RAID 5+1)
@@ -50,6 +131,7 @@ This was incredibly frustrating since I couldn't SSH in to fix it remotely. Time
 - Server location in living room requires low noise
 - Expanding network means low idle power consumption is critical
 - Need to segregate storage from main hardware while learning (solution: Proxmox + TrueNAS)
+- Avoid as much network bottleneck, aim for 2.5Gb/s as it's more standardized
 
 **Current Software Stack:**
 - CasaOS
@@ -65,142 +147,101 @@ This was incredibly frustrating since I couldn't SSH in to fix it remotely. Time
 
 ## 🛠️ New Software Stack
 
-### 🥧 Raspberry Pi 5 (Service Node)
-- Grafana
-- Scaphandre
-- Prometheus
-- NUT-Exporter
+> **📋 Note:** For detailed hardware specifications and pricing, see [HARDWARE.md](./HARDWARE.md)
 
-### 🚀 DevOps
-- Kubernetes (Talos)
-- ArgoCD
-- GitLab
-- CI runners
-- Podman
+### 🥧 Raspberry Pi 5 (Service Node)
+
+| Technology | Purpose | Description |
+|------------|---------|-------------|
+| **Grafana** | Visualization | Real-time monitoring dashboards for infrastructure metrics |
+| **Scaphandre** | Power Monitoring | Tracks energy consumption of servers and services |
+| **Prometheus** | Metrics Collection | Time-series database for monitoring and alerting |
+| **NUT-Exporter** | UPS Monitoring | Exposes UPS metrics to Prometheus for power monitoring |
+
+### 🚀 DevOps & Automation
+
+| Technology | Purpose | Description |
+|------------|---------|-------------|
+| **Kubernetes (Talos)** | Container Orchestration | Minimal, immutable OS for running containerized workloads |
+| **Ansible** | Configuration Management | Automates server provisioning and configuration |
+| **ArgoCD** | GitOps CD | Continuous deployment using Git as source of truth |
+| **GitLab** | CI/CD & Git | Self-hosted Git repos with built-in CI/CD pipelines |
+| **CI Runners** | Build Automation | Execute GitLab CI/CD jobs for automated testing and deployment |
+| **Podman** | Container Runtime | Daemonless container engine as Docker alternative |
 
 ### 🌐 Networking
-- Netgear Router (AP mode)
-- Router-on-a-stick
-- Pi-Hole (DNS)
-- PiVPN (WireGuard)
 
-### 🎯 Compute Nodes
-- Proxmox VE (PVE)
-- Tor Node
-- VDI (AD)
-- WordPress
-- Minecraft
-- SearxNG
-- Samba
-- Nginx
-- NUT client 
-- cloud.init
+| Technology | Purpose | Description |
+|------------|---------|-------------|
+| **Netgear Router** | Access Point | ISP router configured in AP mode for WiFi |
+| **Router-on-a-stick** | VLAN Routing | Single interface routing multiple VLANs through firewall |
+| **Pi-Hole** | DNS & Ad Blocking | Network-wide ad blocking and DNS caching |
+| **PiVPN (WireGuard)** | VPN Server | Secure remote access to home network |
 
-### 💾 NAS
-- TrueNAS
-- Plex/Jellyfin
-- ZFS snapshots / rsnapshot
+### 🎯 Compute Nodes (Proxmox Cluster)
 
-### Mobile 
-- Filebrowser
+| Technology | Purpose | Description |
+|------------|---------|-------------|
+| **Proxmox VE (PVE)** | Hypervisor | Open-source virtualization platform for VMs and containers |
+| **Proxmox Backup Server** | Backup Solution | Deduplicated, incremental backups for VMs and containers |
+| **Tor Node** | Privacy | Contribute to Tor network anonymity |
+| **VDI (AD)** | Virtual Desktop | Windows virtual desktop with Active Directory integration |
+| **WordPress** | Web Server | Self-hosted blog/website platform |
+| **Minecraft** | Game Server | Self-hosted Minecraft server for friends |
+| **SearxNG** | Meta-Search | Privacy-respecting meta-search engine |
+| **Samba** | File Sharing | Network file sharing compatible with Windows/Mac/Linux |
+| **Nginx** | Reverse Proxy | Web server and reverse proxy for services |
+| **NUT Client** | UPS Management | Network UPS Tools for graceful shutdowns |
+| **cloud-init** | VM Provisioning | Automated initial VM configuration |
+| **n8n** | Workflow Automation | Self-hosted alternative to Zapier for automations |
+| **Corosync** | Cluster Management | High-availability cluster communication for Proxmox |
+| **NFS/iSCSI** | Network Storage | Network file system and block storage protocols |
 
-### Don't know what it is 
-- Ansible 
-- Corosync 
-- NFS/iSCSI
+### 💾 NAS (TrueNAS)
 
----
+| Technology | Purpose | Description |
+|------------|---------|-------------|
+| **TrueNAS** | Storage OS | FreeBSD-based NAS with ZFS filesystem |
+| **Jellyfin** | Media Server | Open-source media streaming (movies, TV, music) |
+| **ZFS Snapshots** | Backup | Filesystem-level snapshots for point-in-time recovery |
+| **rsnapshot** | Alternative Backup | Incremental backup solution (evaluating vs ZFS snapshots) |
 
-## 🏗️ Rack Layout (Top to Bottom)
+### 📱 Mobile Management
 
-| Unit | Device | Mounting Method | Height |
-|------|--------|----------------|--------|
-| Top | 7" Screen + Mesh Pod | Sitting on top of cabinet | 0U |
-| U12 | Venting Panel | Screwed into rails | 1U |
-| U11 | MikroTik Switch | Hard Mount (RMK-2/10 Ears) | 1U |
-| U10 | Patch Panel | Screwed into rails | 1U |
-| U09 | Services Shelf | 1U shelf: N100 Firewall (left) + Pi 5 (right) | 1U |
-| U08-U06 | ThinkCentre Stack | Nodes 3, 2, 1 on 1U shelf | 3U |
-| U05-U01 | NAS (Jonsbo N2) | Sits on cabinet floor | 5U |
-
-### 📐 Rack Space Calculation
-- 1U = 4.45 cm
-- NAS: 22.25 cm (5U)
-- Nodes: 17.8 cm (3U)
-- Switch: 4.45 cm (1U)
-- Patch Panel: 4.45 cm (1U)
-- Vent: 4.45 cm (1U)
-- **Total: 53.4 cm (12U)**
+| Technology | Purpose | Description |
+|------------|---------|-------------|
+| **Filebrowser** | File Access | Web-based file manager for remote access to NAS |
+| **Proxmobo** | Mobile Proxmox | Android app for managing Proxmox from phone |
 
 ---
 
-## 🖥️ Hardware Components
+## 📚 Configuration & Setup Guides
 
-### 💻 Existing Hardware
-- **Eero 6+ Mesh Pod**
-- **Netgear Router AC1750** (1750Mbps, from Explorer ISP)
-- **Dell Precision 3620 Tower** - i7-7700 Quad Core 3.6GHz, 32GB RAM, 1TB NVMe, NVS310 GPU  
-  [$419 CAD](https://www.amazon.ca/Dell-Optiplex-7050-Excellent-Condition/dp/B0F854GHFB)
-- **Lenovo ThinkCentre M710Q** - i5-7400T 2.4GHz, 8GB RAM, 500GB HDD  
-  [$102.14 CAD](https://www.ebay.ca/itm/197901648050)
-- **Lenovo ThinkCentre M715Q** - AMD Pro A10-9700E, 8GB RAM, 500GB HD  
-  [$99.98 CAD](https://www.ebay.ca/itm/155474578754)
-- **Lenovo ThinkCentre M710q** - i5-7500T, 8GB DDR4, Intel AC8265 (no HDD)  
-  [$121.74 CAD](https://www.ebay.ca/itm/376693720411)
-
-### 💿 Storage
-- **SanDisk SSD Plus 500GB** (opened box) - [$59.27 CAD](https://www.amazon.ca/dp/B0F4Y2VR8S)
-- **SanDisk SSD Plus 500GB** (new) - [$64.99 CAD](https://www.amazon.ca/dp/B0F4Y2VR8S)
-- **Patriot P220 128GB SATA SSD** - [$24.99 CAD](https://www.amazon.ca/dp/B0BS9W3T48)
-
-### 🎮 Raspberry Pi 5 Setup
-- **Raspberry Pi 5 8GB** (2023 model) - [$133.69 CAD](https://www.amazon.ca/dp/B0CK2FCG1K)
-- **GeeekPi P33 M.2 NVMe PoE+ HAT** - [$48.98 CAD](https://www.amazon.ca/dp/B0D8JC3MXQ)
-
----
-
-## 🏢 Rack Infrastructure
-
-- **GeeekPi 12U Server Cabinet** - [$209.94 CAD](https://www.amazon.ca/GeeekPi-Cabinet-Equipment-RackMate-Rackmount/dp/B0DT2XM22G)
-- **GeeekPi 12-Port Patch Panel** - [$23.79 CAD](https://www.amazon.ca/dp/B0D5XPNHHF)
-- **GeeekPi 1U Server Rack Shelf** - [$28.04 CAD](https://www.amazon.ca/dp/B0D5XGSPXD)
-- **PDU 3-Socket** - [$42.72 CAD](https://www.aliexpress.com/item/1005005963996490.html)
-- **3-Prong 1-to-4 Power Splitter** - [$23.99 CAD](https://www.amazon.ca/dp/B0CH9NHFHS)
-- **Freenove 7" Touchscreen Monitor** - [$47.96 CAD](https://www.amazon.ca/dp/B0BPP6MFFJ)
-
----
-
-## 🌐 Network Equipment
-
-- **MikroTik CRS310-8G+2S+IN** (8x 2.5GbE + 2x SFP+) - [$276 CAD](https://www.amazon.ca/dp/B0CH9NHFHS)
-- **MikroTik RMK-2/10 Rack Mount Kit** - [$33.52 CAD](https://www.shop.wirelessnetware.ca/accessories/516-rmk-210-4752224008688.html)
-- **Gigabit PoE+ Injector** - [$18.88 CAD](https://www.amazon.ca/Injector-IEEE802-3at-Replacement-TPE-115GI-TL-PoE160S/dp/B00NRF9GQO)
-
-### 🔥 Firewall Hardware
-- **Fanless N100 Mini PC** - 4x 2.5GbE, DDR4, NVMe, Type-C - [$245.99 USD](https://www.aliexpress.com/item/1005010292635214.html)
-- **Patriot P320 128GB NVMe** - [$33.99 CAD](https://www.amazon.ca/dp/B0D4RD18YV)
-- **Crucial 8GB DDR4 3200MHz SO-DIMM** - [eBay.ca](https://www.ebay.ca/itm/365735557774)
-- **2.5Gb Network Adapter** (M.2 A+E/Mini PCIe to RJ45) - [$18.79 USD](https://www.aliexpress.com/item/1005008820106326.html)
-
-### 🖥️ Alternative N100 Option
-- **N100 Linux Industrial Embedded PC** - 4x 2.5GbE - [$283.29 USD](https://www.aliexpress.com/item/1005005404120290.html)
-
----
-
-## 💾 NAS Specifications
-
-- **Case:** Jonsbo N2 NAS - [$169.05 USD](https://www.aliexpress.com/item/1005007766481140.html)
-- **Motherboard + CPU:** N5105 Industrial Board - [$160.38 USD](https://www.aliexpress.com/item/1005006221619148.html)
-- **Case Fan:** Noctua NF-A9 PWM - [$25.05 CAD](https://www.amazon.ca/dp/B00RUZ059O)
-- **CPU Fan:** Noctua NF-A4x20 - [$29.79 USD](https://www.aliexpress.com/item/1005006690066510.html)
-- **PSU:** GAMEMAX 650W 80+ Gold Fully Modular SFX - [$144.49 CAD](https://www.amazon.ca/dp/B0F9NR7G17)
-- **Memory:** Crucial 8GB x2 DDR4 3200MHz SO-DIMM - [$93.69 CAD](https://www.ebay.ca/itm/365735557774)
-- **SATA Cables:** 6-pack - [$6.79 USD](https://www.aliexpress.com/item/1005007523507363.html)
-- **Boot Drive:** 1TB NVMe M.2 PCIe 3.0x4 (3,500MB/s) - [$107.99 CAD](https://www.amazon.ca/dp/B0DTY976K3)
-- **Storage:** 1TB 3.5" HDD - $25 CAD (MDG Computers)
+- [Initial Setup Guide](./docs/SETUP.md) - Step-by-step installation and configuration
+- [Network Configuration](./docs/NETWORK.md) - VLANs, firewall rules, and routing
+- [Proxmox Cluster Setup](./docs/PROXMOX.md) - Cluster configuration and HA setup
+- [TrueNAS Configuration](./docs/TRUENAS.md) - ZFS pools, shares, and snapshots
+- [Monitoring Setup](./docs/MONITORING.md) - Grafana, Prometheus, and alerting
 
 ---
 
 ## 💰 Total Investment
 
-Building a homelab that balances performance, expandability, and power efficiency 
+Building a homelab that balances performance, expandability, and power efficiency (I was not budget conscious lmao)
+
+**Total Hardware Cost:** See [HARDWARE.md](./HARDWARE.md) for complete breakdown
+
+---
+
+## 🔗 Resources
+
+- [r/homelab](https://reddit.com/r/homelab) - Community for homelab enthusiasts
+- [Proxmox Documentation](https://pve.proxmox.com/wiki/Main_Page)
+- [TrueNAS Documentation](https://www.truenas.com/docs/)
+- [pfSense Documentation](https://docs.netgate.com/pfsense/en/latest/)
+
+---
+
+## 📝 License
+
+This documentation is shared for educational purposes. Feel free to use and adapt for your own homelab!
