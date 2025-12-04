@@ -60,7 +60,6 @@ Local LLM
 
 #### Storage
 ##### SATA SSD
-
 SanDisk 500GB
 SanDisk 500GB
 SanDisk 500GB
@@ -75,6 +74,18 @@ G15 512GB
 Patriot 128GB 
 Cusu 2TB
 
+###### Where it is going
+G15 laptop 1TB 
+NAS 120GB + 1TB NVMe
+ThinkCentre Intel 512GB 
+ThinkCentre Intel 512GB
+ThinkCentre Intel 512GB
+ThinkCentre AMD 128GB + 2TB NVME
+Pi 5 512GB 
+N150 128GB 
+Dell Hardrives 500GB HD
+
+
 
 ##### High Availability (HA) 
 3-2-1 Rule
@@ -85,9 +96,8 @@ Data (Offsite Backup) (proton)
 DNS Reduncancy (Pi-Hole) 
 
 
-
 ### Logical Design 
-Eero (Router) 
+Eero (WAN) 
 DMZ (Firewall)
 VLAN Tagging (Switch)
 Raspberry-Pi (jump host)
@@ -126,27 +136,9 @@ Jump Host
 Bastion Host 
 Hub
 
-### My Network
 
-Eero (WAN)
-DMZ (Firewall)
-Microtik (Layer 3 managed switch)
-Raspberry-Pi (jump host)
-
-
-
-### Research 
-https://loganmarchione.com/2022/09/homelab-10-mini-rack-shelves/
-https://linuxblog.io/home-lab-beginners-guide-hardware/
-https://linuxblog.io/pfsense-firewall-config-settings/
-https://www.youtube.com/watch?v=lUzSsX4T4WQ
-https://www.cdw.ca/product/netgear-gs308e-ethernet-switch/8434280
-https://www.amazon.ca/UBIQUITI-ER-X-SFP-Edgerouter-X-Sfp/dp/B012X45WH6
-
-
-
- #### OLD VERSION 
-
+### Rack Diagrams
+#### OLD VERSION 
 Screen - Mesh } On top 
 PDU } Behind U12/U11 (Top)
 1U Venting Pannel
@@ -172,18 +164,22 @@ U06	ThinkCentre Stack	Node 1 (Bottom)
 U01-05	NAS (Jonsbo N2)	Floor/Body	
 
 
-##### Drive Shuffle 
-G15 laptop 1TB 
-NAS 120GB SATA + 1TB 
-ThinkCentre Intel 512GB SATA
-ThinkCentre Intel 512GB SATA
-ThinkCentre Intel 512GB SATA
-ThinkCentre AMD 128GB SATA + 512GB Nvme (don't have)
-Pi 5 512GB 
-N150 128GB 
-Dell Hardrives 500GB HD
+#### Physcial Topology 
 
+Raspberry Pi 5 8GB, PoE, 512GB NVMe with 7inch Touchscreen
+N150 4x 2.5GbE, 8GB DDR4, NVMe 128GB
+MikroTik CRS310-8G+2S+IN 8x 2.5GbE + 2x SFP+ managed switch
+ThinkCentre M710Q i5-7400T, 2.5GbE, 16GB RAM, 500GB SSD SATA
+ThinkCentre M710Q i5-7500T, 2.5GbE, 16GB RAM, 500GB SSD SATA
+ThinkCentre M715Q i5-7500T, 2.5GbE, 16GB RAM, 500GB SSD SATA
+ThinkCentre M710Q AMD Pro A10-9700E, 16GB DDR4 RAM, 128GB SSD SATA Boot-drive + 1TB NVMe
+Jonsbo N2, N5105, 16GB DDR4 RAM, 1TB NVMe, 128GB SSD SATA boot-drive, 650W PSU, 5x1TB HDD
+CyberPower CST150UC-FC UPS 1500VA
 
+High Availability (HA)
+Network UPS Tools (NUT)
+Maybe put NUT on the PBS instead
+CloudSync => RClone 
 
 ### High Availability (HA) - INFO DUMP
 Redundancy Recommendations (The "3-2-1" Rule)
@@ -201,6 +197,31 @@ Cost: pennies per GB.
 C. DNS Redundancy
 The Risk: Your Pi 5 (Pi-hole) dies. The internet works, but nobody can load websites because DNS is down. "Wife/Parent Acceptance Factor" drops to zero.
 The Fix: Run a secondary Pi-hole container on one of the Intel Nodes (in Proxmox). Set your DHCP to hand out both IP addresses.
+
+
+#### Corosync "Split Brain" Prevention
+
+Step 2: The Software Fix (Token Rotation)
+By default, Corosync expects a response in ~100ms. If the network is clogged by ZFS, it panics. We will change that timeout to 3-5 seconds.
+Do this after installing Proxmox:
+On one node, create a file: /etc/pve/corosync.conf (Proxmox manages this file).
+You will edit the totem section to increase the token timeout.
+code
+Bash
+totem {
+    version: 2
+    secauth: on
+    cluster_name: my-cluster
+    config_version: 1
+    # CHANGE THIS LINE BELOW
+    token: 5000  
+    # 5000ms = 5 seconds tolerance before declaring a node dead
+    interface {
+        linknumber: 0
+    }
+}
+Why this works:
+Even if ZFS Replication floods your 2.5GbE cable, it won't block the line for a full 5 seconds. The Corosync heartbeat will eventually squeeze through, and the cluster will stay stable.
 
 
 ### Other Software (INFO DUMP)
@@ -252,31 +273,49 @@ dtparam=fan_temp1=60000
 dtparam=fan_temp1_hyst=2000
 
 
+### WAN configuration INFO DUMP
 
+2. The Configuration Steps
+Step A: Eero Configuration (The Edge)
+Open Eero App.
+DHCP: Let Eero handle DHCP for the "House" (e.g., 192.168.4.x).
+DMZ: Go to Settings > Network Settings > Reservations & Port Forwarding.
+Assign a Static IP to the N150 (e.g., 192.168.4.2).
+Enable DMZ for this IP.
+Result: The Eero forwards all incoming internet ports to your N150. This minimizes the "Double NAT" issues for your servers.
+Step B: Netgear AC1750 (The Lab AP)
+Plug your laptop directly into the Netgear (disconnected from the rest of the network).
+Log in to the Web UI.
+Enable AP Mode (Access Point Mode).
+This disables the DHCP server and NAT on the Netgear. It becomes a "dumb" WiFi antenna.
+Set the SSID to something unique (e.g., Homelab_5G).
+Step C: N150 Firewall (The Router)
+Port 1 (WAN): Connects to Eero.
+Type: Static IPv4 (192.168.4.2).
+Gateway: Eero IP (192.168.4.1).
+Port 2 (LAN): Connects to MikroTik Switch Port 1.
+Subnet: 10.0.10.1/24 (Management/Servers).
+Port 3 (OPT1/WIFI): Connects to Netgear AC1750.
+Subnet: 10.0.20.1/24 (Lab WiFi).
+Enable DHCP Server on this interface so your laptop gets an IP when you join WiFi.
+3. The Updated Physical Map (Ports Saved!)
+By moving the Netgear AP directly to the N150 Firewall, you save a port on your precious MikroTik switch.
+N150 Firewall Connections:
+Port 1: Cable to Eero LAN.
+Port 2: Cable to MikroTik Port 1.
+Port 3: Cable to Netgear AC1750 (WAN/Internet port).
+Port 4: Empty (Emergency Laptop access).
+MikroTik CRS310 Port Map (Updated):
+Port	Speed	Device
+Port 1	2.5GbE	N150 Firewall (LAN Uplink)
+Port 2	2.5GbE	Node 1 (Intel)
+Port 3	2.5GbE	Node 2 (Intel)
+Port 4	2.5GbE	Node 3 (Intel)
+Port 5	2.5GbE	PBS Node (AMD)
+Port 6	2.5GbE	TrueNAS
+Port 7	1GbE	Raspberry Pi 5 (via PoE Injector)
+Port 8	1GbE	EMPTY / SPARE (Available for future expansion!)
 
-
-#### NAS Research
-https://www.youtube.com/watch?v=XXKppFyHtHk&t=234s
-https://linustechtips.com/topic/1590875-up-to-12-internal-drives-in-a-jonsbo-n2/
-https://hunio.org/posts/homelab/my-new-downsized-homelab/
-https://www.youtube.com/watch?v=C6hf3ddtNCs
-
-
-#### More Research
-https://www.reddit.com/r/minilab/comments/1on90up/first_minilab_only_powered_by_one_laptop_power/
-https://www.reddit.com/r/minilab/comments/1ohr6ay/my_new_mini_rack_downsized_from_12u/
-https://www.reddit.com/r/minilab/comments/1obaiao/first_minilab/
-https://github.com/geerlingguy/mini-rack?tab=readme-ov-file
-https://www.reddit.com/r/homelab/comments/1m7onp8/lenovo_thinkcentere_25_gb_ethernet_upgrade/
-https://www.reddit.com/r/minilab/comments/1hhm9ar/power_strip_for_10_rack/
-
-
-
-https://www.reddit.com/r/minilab/comments/1on32ah/joined_the_club/
-https://www.wirelessnetware.ca/blog/why-more-canadians-are-choosing-wireless-netware-for-mikrotik-solutions/
-https://imgur.com/a/homelab-v3-Vkc1EBI
-https://www.reddit.com/r/sffpc/comments/16jq9hn/jonsbo_n2_replacing_stock_fan_with_nuctoa_nfa12x25/
-https://www.reddit.com/r/minilab/comments/1otqsva/home_lab_v3_i_swear_im_done_upgrading/
 
 
 ### File Tree
@@ -295,6 +334,38 @@ homelab/
     ├── proxmox/            # Proxmox configs
     ├── ansible/            # Ansible playbooks
     └── kubernetes/         # K8s manifests
+
+
+### Research 
+https://loganmarchione.com/2022/09/homelab-10-mini-rack-shelves/
+https://linuxblog.io/home-lab-beginners-guide-hardware/
+https://linuxblog.io/pfsense-firewall-config-settings/
+https://www.youtube.com/watch?v=lUzSsX4T4WQ
+https://www.cdw.ca/product/netgear-gs308e-ethernet-switch/8434280
+https://www.amazon.ca/UBIQUITI-ER-X-SFP-Edgerouter-X-Sfp/dp/B012X45WH6
+
+#### NAS Research
+https://www.youtube.com/watch?v=XXKppFyHtHk&t=234s
+https://linustechtips.com/topic/1590875-up-to-12-internal-drives-in-a-jonsbo-n2/
+https://hunio.org/posts/homelab/my-new-downsized-homelab/
+https://www.youtube.com/watch?v=C6hf3ddtNCs
+
+
+#### More Research
+https://www.reddit.com/r/minilab/comments/1on90up/first_minilab_only_powered_by_one_laptop_power/
+https://www.reddit.com/r/minilab/comments/1ohr6ay/my_new_mini_rack_downsized_from_12u/
+https://www.reddit.com/r/minilab/comments/1obaiao/first_minilab/
+https://github.com/geerlingguy/mini-rack?tab=readme-ov-file
+https://www.reddit.com/r/homelab/comments/1m7onp8/lenovo_thinkcentere_25_gb_ethernet_upgrade/
+https://www.reddit.com/r/minilab/comments/1hhm9ar/power_strip_for_10_rack/
+
+
+#### Seperate Session
+https://www.reddit.com/r/minilab/comments/1on32ah/joined_the_club/
+https://www.wirelessnetware.ca/blog/why-more-canadians-are-choosing-wireless-netware-for-mikrotik-solutions/
+https://imgur.com/a/homelab-v3-Vkc1EBI
+https://www.reddit.com/r/sffpc/comments/16jq9hn/jonsbo_n2_replacing_stock_fan_with_nuctoa_nfa12x25/
+https://www.reddit.com/r/minilab/comments/1otqsva/home_lab_v3_i_swear_im_done_upgrading/
 
 
 
@@ -317,7 +388,7 @@ PAM + Aegis 2FA
 
 Software to the table list 
 XFC
-LACE
+LACE (the monitoring acroynym I forgot)
 
 When would I use cloud-init for this homelab 
 is it used in the inital setup, or when I spin up virtual machines after? 
@@ -339,3 +410,38 @@ Ansible:
 Phase 4	Clustering/Networking (Proxmox)
 Phase 5-6	OS and Services (LXC/VM)	
 Ongoing	Consistency/Updates	
+
+I feel like the @bash stuff is kinda boring, it possible to add syntax highlighting instead?
+
+
+
+### Usernames
+Admin Usernames 
+switch = ctr-adm38
+Pi = jump-adm64
+Proxmox = cluster-adm92
+TrueNas = nas-admin11
+non-admin = dlaurin
+
+
+## TERMS + Notes
+2.5GBE backbone 
+SMB vs NFS vs iSCI 
+TrueNAS + iSCI = Zvol
+PXE Boot (Diskless boot)
+SAN (Storage Area Network) => VM's hardrive is on the NAS
+NFS on TrueNAS => for Backups and ISO library
+SMB => Jellyfin + Documents + Prism
+Quorum (2-1 majority vote from nodes)
+DDNS (DuckDNS) => if WAN IP changes you can still VPN in
+
+
+### HA Notes 
+- Corosync => Cluster Manager
+- ZFS(RAID0) replication on nodes
+- Quorum (2-1 majority vote from nodes)
+- Seperate VLAN for Management(VLAN1) and for Storage/Migration(VLAN2)
+- Backup DNS in a container
+- Hardware Watchdog in ThinkCentre BIOS => if proxmox freezes the hello packet (ACK), reboots it 
+
+

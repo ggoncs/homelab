@@ -6,9 +6,9 @@ Complete walkthrough for setting up the homelab from scratch.
 
 ## 📋 Prerequisites
 
-- [ ] All hardware assembled and connected
+- [X] All hardware assembled and connected
 - [ ] Network cables labeled and organized
-- [ ] ISP router configured in AP mode
+- [X] ISP router configured in AP mode
 - [ ] USB drives prepared for OS installations
 - [ ] Static IP plan documented (see NETWORK.md)
 
@@ -23,22 +23,13 @@ Complete walkthrough for setting up the homelab from scratch.
 # Power distribution setup
 ```
 
-**Steps:**
-1. Install rack shelves at appropriate U positions
-2. Mount patch panel (U10)
-3. Install MikroTik switch with rack ears (U11)
-4. Mount venting panel (U12)
-5. Cable management - use velcro straps
-
 ### 1.2 Power Setup
 1. Connect UPS to wall outlet
 2. Plug PDU into UPS
 3. Connect all devices to PDU
 4. Test UPS cutover (simulate power loss)
 
-**UPS Configuration:**
 ```bash
-# Document UPS IP address and default credentials
 # Screenshot of UPS web interface
 ```
 
@@ -48,7 +39,7 @@ Complete walkthrough for setting up the homelab from scratch.
 
 ### 2.1 MikroTik Switch Initial Config
 ```bash
-# Connect to switch via WinBox or WebFig
+# Connect to switch via WinBox 
 # Default IP: 192.168.88.1
 # Username: admin
 # Password: (blank)
@@ -70,12 +61,7 @@ Complete walkthrough for setting up the homelab from scratch.
 ```
 
 ### 2.3 Firewall Installation
-**Hardware:** N150 Mini PC (on top of rack)
-
-1. Download pfSense/OPNsense ISO
-2. Flash to USB drive with Rufus/Etcher
-3. Boot N150 from USB
-4. Follow installation wizard
+**Hardware:** N150 Mini PC 
 
 **Initial Config:**
 ```bash
@@ -95,12 +81,7 @@ Complete walkthrough for setting up the homelab from scratch.
 ## 💻 Phase 3: Proxmox Cluster Setup
 
 ### 3.1 Install Proxmox VE (Node 1)
-**Hardware:** ThinkCentre M710Q (i5-7400T) - U05
-
-1. Download Proxmox VE ISO
-2. Flash to USB drive
-3. Boot ThinkCentre from USB
-4. Follow installation wizard
+**Hardware:** ThinkCentre M710Q - U05
 
 **Installation Settings:**
 ```bash
@@ -166,11 +147,6 @@ pvecm nodes
 ### 4.1 Install TrueNAS SCALE
 **Hardware:** Jonsbo N2 (N5105) - U01-U05
 
-1. Download TrueNAS SCALE ISO
-2. Flash to USB drive
-3. Boot from USB
-4. Install to 120GB Kingston SSD
-
 **Initial Config:**
 ```bash
 Hostname: truenas.homelab.local
@@ -184,9 +160,9 @@ DNS: 10.0.99.1
 # Via TrueNAS Web UI: http://10.0.40.10
 
 # Pool Name: tank
-# Layout: RAID-Z1 (RAID 5 equivalent)
+# Layout: RAID-Z1 
 # Disks: 5x 1TB HDDs
-# Usable Capacity: ~4TB
+# Usable Capacity: ~3.5TB
 
 # L2ARC Cache: 1TB NVMe
 ```
