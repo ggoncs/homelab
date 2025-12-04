@@ -171,8 +171,8 @@ N150 4x 2.5GbE, 8GB DDR4, NVMe 128GB
 MikroTik CRS310-8G+2S+IN 8x 2.5GbE + 2x SFP+ managed switch
 ThinkCentre M710Q i5-7400T, 2.5GbE, 16GB RAM, 500GB SSD SATA
 ThinkCentre M710Q i5-7500T, 2.5GbE, 16GB RAM, 500GB SSD SATA
-ThinkCentre M715Q i5-7500T, 2.5GbE, 16GB RAM, 500GB SSD SATA
-ThinkCentre M710Q AMD Pro A10-9700E, 16GB DDR4 RAM, 128GB SSD SATA Boot-drive + 1TB NVMe
+ThinkCentre M710Q i5-7500T, 2.5GbE, 16GB RAM, 500GB SSD SATA
+ThinkCentre M715Q AMD Pro A10-9700E, 16GB DDR4 RAM, 128GB SSD SATA Boot-drive + 1TB NVMe
 Jonsbo N2, N5105, 16GB DDR4 RAM, 1TB NVMe, 128GB SSD SATA boot-drive, 650W PSU, 5x1TB HDD
 CyberPower CST150UC-FC UPS 1500VA
 
@@ -366,54 +366,6 @@ https://www.wirelessnetware.ca/blog/why-more-canadians-are-choosing-wireless-net
 https://imgur.com/a/homelab-v3-Vkc1EBI
 https://www.reddit.com/r/sffpc/comments/16jq9hn/jonsbo_n2_replacing_stock_fan_with_nuctoa_nfa12x25/
 https://www.reddit.com/r/minilab/comments/1otqsva/home_lab_v3_i_swear_im_done_upgrading/
-
-
-
-## Fixes needed from Claude
-
-For some reason I don't see I don't see the network config file you made? can you re display it?
-
-Can you change the order of the rack layout 
-
-the screen is attached to Pi! 
-so raberry Pi and firewall are on top (there is only 1 Pi)
-You forgot the N150 firewall (it is sitting on top also)
-Remove the Eero Mesh pod from the diagram
-the NAS is 5U total 
-my thinkcenter nodes 
-3 intel and at the bottom would be amd one
-
-Add this to Mobile section
-PAM + Aegis 2FA
-
-Software to the table list 
-XFC
-LACE (the monitoring acroynym I forgot)
-
-When would I use cloud-init for this homelab 
-is it used in the inital setup, or when I spin up virtual machines after? 
-
-So for my backup solution 
-TrueNAS  
-ZFS Replication (only replicating snapshots)
-And its encrypted (NAS and the PBS)
-Pull replication
-(no rsnapshot)
-
-add r/minilab - Used it for hardware inspiration
-
-
-I'm trying to use ansible, so do factor that in the template files 
-(or is it better to do everything manually to learn the commands)
-
-Ansible:
-Phase 4	Clustering/Networking (Proxmox)
-Phase 5-6	OS and Services (LXC/VM)	
-Ongoing	Consistency/Updates	
-
-I feel like the @bash stuff is kinda boring, it possible to add syntax highlighting instead?
-
-
 
 ### Usernames
 Admin Usernames 

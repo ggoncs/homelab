@@ -61,9 +61,12 @@ This homelab is built on four pillars:
 ```
 ┌─────────────────────────────────────────┐
 │  N150 Firewall (on top of rack)        │
+│  4x 2.5GbE, 8GB DDR4, 128GB NVMe       │
 └─────────────────────────────────────────┘
 ┌─────────────────────────────────────────┐
-│  7" Screen + Eero Mesh Pod (on top)     │  0U
+│  Raspberry Pi 5 (on top of rack)       │
+│  8GB RAM, 512GB NVMe, PoE+             │
+│  + 7" Touchscreen attached             │
 └─────────────────────────────────────────┘
 ┌─────────────────────────────────────────┐
 │  Venting Panel                          │  U12
@@ -73,14 +76,8 @@ This homelab is built on four pillars:
 ├─────────────────────────────────────────┤
 │  12-Port Patch Panel                    │  U10
 ├─────────────────────────────────────────┤
-│  Raspberry Pi 5 (with 7" screen)       │  U09
-│  8GB RAM, 512GB NVMe, PoE+             │
-├─────────────────────────────────────────┤
-│  ThinkCentre M710Q (Node 4)            │  U08
+│  ThinkCentre M710Q (Node 3)            │  U09
 │  i5-7500T, 16GB RAM, 500GB SSD         │
-├─────────────────────────────────────────┤
-│  ThinkCentre M715Q (Node 3)            │  U07
-│  AMD A10-9700E, 16GB RAM, 128GB+1TB    │
 ├─────────────────────────────────────────┤
 │  ThinkCentre M710Q (Node 2)            │  U06
 │  i5-7500T, 16GB RAM, 500GB SSD         │
@@ -88,11 +85,14 @@ This homelab is built on four pillars:
 │  ThinkCentre M710Q (Node 1)            │  U05
 │  i5-7400T, 16GB RAM, 500GB SSD         │
 ├─────────────────────────────────────────┤
-│                                         │  U04
-│  Jonsbo N2 NAS                         │  U03
-│  N5105, 16GB RAM                       │  U02
-│  5x 1TB HDD (RAID 5)                   │  U01
-│  1TB NVMe Cache, 650W PSU              │
+│  ThinkCentre M715Q (BPS)               │  U04
+│  AMD A10-9700E, 16GB RAM, 128GB+1TB    │
+├─────────────────────────────────────────┤
+│                                         │  U05
+│  Jonsbo N2 NAS                         │  U04
+│  N5105, 16GB RAM                       │  U03
+│  5x 1TB HDD (RAID 5)                   │  U02
+│  1TB NVMe Cache, 650W PSU              │  U01
 └─────────────────────────────────────────┘
 ┌─────────────────────────────────────────┐
 │  CyberPower UPS 1500VA                  │
@@ -100,11 +100,11 @@ This homelab is built on four pillars:
 ```
 
 **Equipment Summary:**
-- **Raspberry Pi 5** - 8GB RAM, PoE, 512GB NVMe, 7" Touchscreen (monitoring/services)
-- **N150 Firewall** - 4x 2.5GbE, 8GB DDR4, 128GB NVMe (pfSense)
+- **N150 Firewall** - 4x 2.5GbE, 8GB DDR4, 128GB NVMe (pfSense) - *On top of rack*
+- **Raspberry Pi 5** - 8GB RAM, PoE, 512GB NVMe, 7" Touchscreen (monitoring/services) - *On top of rack*
 - **MikroTik CRS310** - 8x 2.5GbE + 2x SFP+ managed switch
-- **ThinkCentre Nodes (4x)** - Proxmox cluster with 16GB RAM each
-- **Jonsbo N2 NAS** - TrueNAS with RAID 5 storage
+- **ThinkCentre Nodes (4x)** - Proxmox cluster with 16GB RAM each (3 Intel, 1 AMD)
+- **Jonsbo N2 NAS** - TrueNAS with RAID 5 storage (5U total)
 - **CyberPower UPS** - 1500VA battery backup
 
 ---
@@ -112,12 +112,11 @@ This homelab is built on four pillars:
 ## ✅ Requirements
 
 ### Core Requirements
-- ✅ RAID 5 storage
-- ✅ 8-port managed 2.5GbE switch
-- ✅ Jump server
+- ✅ RAID 5 redundancy
+- ✅ 2.5GbE backbone
+- ✅ Network segregation (DMZ)
 - ✅ 12U rack server
-- ✅ Firewall (DMZ)
-- ✅ Clustering
+- ✅ Clustering (ZFS)
 - ❌ **Ethernet over Power (EoP)** - Since I wanted a 10-inch managed switch, only Mikrotik and QNAP are well-known high-quality options. QNAP supports PoE and 2.5GbE but costs double. A PoE+ injector is affordable, and I only need it for the Raspberry Pi (which maxes at 1Gbps anyway).
 
 ### 📊 Analysis: Current Setup Issues
@@ -157,13 +156,14 @@ This homelab is built on four pillars:
 | **Scaphandre** | Power Monitoring | Tracks energy consumption of servers and services |
 | **Prometheus** | Metrics Collection | Time-series database for monitoring and alerting |
 | **NUT-Exporter** | UPS Monitoring | Exposes UPS metrics to Prometheus for power monitoring |
+| **LACE** | Monitoring Stack | Linux, Alertmanager, cAdvisor, Exporters - monitoring acronym |
 
 ### 🚀 DevOps & Automation
 
 | Technology | Purpose | Description |
 |------------|---------|-------------|
 | **Kubernetes (Talos)** | Container Orchestration | Minimal, immutable OS for running containerized workloads |
-| **Ansible** | Configuration Management | Automates server provisioning and configuration |
+| **Ansible** | Configuration Management | Automates server provisioning and configuration (Phase 4+) |
 | **ArgoCD** | GitOps CD | Continuous deployment using Git as source of truth |
 | **GitLab** | CI/CD & Git | Self-hosted Git repos with built-in CI/CD pipelines |
 | **CI Runners** | Build Automation | Execute GitLab CI/CD jobs for automated testing and deployment |
@@ -183,7 +183,7 @@ This homelab is built on four pillars:
 | Technology | Purpose | Description |
 |------------|---------|-------------|
 | **Proxmox VE (PVE)** | Hypervisor | Open-source virtualization platform for VMs and containers |
-| **Proxmox Backup Server** | Backup Solution | Deduplicated, incremental backups for VMs and containers |
+| **Proxmox Backup Server** | Backup Solution | Deduplicated, incremental backups for VMs and containers (encrypted) |
 | **Tor Node** | Privacy | Contribute to Tor network anonymity |
 | **VDI (AD)** | Virtual Desktop | Windows virtual desktop with Active Directory integration |
 | **WordPress** | Web Server | Self-hosted blog/website platform |
@@ -192,19 +192,20 @@ This homelab is built on four pillars:
 | **Samba** | File Sharing | Network file sharing compatible with Windows/Mac/Linux |
 | **Nginx** | Reverse Proxy | Web server and reverse proxy for services |
 | **NUT Client** | UPS Management | Network UPS Tools for graceful shutdowns |
-| **cloud-init** | VM Provisioning | Automated initial VM configuration |
+| **cloud-init** | VM Provisioning | Automated VM configuration at boot (used when deploying VMs from templates) |
 | **n8n** | Workflow Automation | Self-hosted alternative to Zapier for automations |
 | **Corosync** | Cluster Management | High-availability cluster communication for Proxmox |
 | **NFS/iSCSI** | Network Storage | Network file system and block storage protocols |
+| **XFCE** | Desktop Environment | Lightweight desktop for VMs requiring GUI |
 
 ### 💾 NAS (TrueNAS)
 
 | Technology | Purpose | Description |
 |------------|---------|-------------|
-| **TrueNAS** | Storage OS | FreeBSD-based NAS with ZFS filesystem |
+| **TrueNAS** | Storage OS | FreeBSD-based NAS with ZFS filesystem (encrypted) |
 | **Jellyfin** | Media Server | Open-source media streaming (movies, TV, music) |
-| **ZFS Snapshots** | Backup | Filesystem-level snapshots for point-in-time recovery |
-| **rsnapshot** | Alternative Backup | Incremental backup solution (evaluating vs ZFS snapshots) |
+| **ZFS Snapshots** | Point-in-time Recovery | Filesystem-level snapshots for data protection |
+| **ZFS Replication** | Backup Strategy | Pull replication from TrueNAS to Proxmox Backup Server (encrypted) |
 
 ### 📱 Mobile Management
 
@@ -212,16 +213,32 @@ This homelab is built on four pillars:
 |------------|---------|-------------|
 | **Filebrowser** | File Access | Web-based file manager for remote access to NAS |
 | **Proxmobo** | Mobile Proxmox | Android app for managing Proxmox from phone |
+| **PAM + Aegis 2FA** | Authentication | Pluggable Authentication Modules with Aegis authenticator for 2FA |
 
 ---
 
 ## 📚 Configuration & Setup Guides
 
+### Ansible Automation Strategy
+
+**Manual Setup (Phases 1-3):** Learn the commands hands-on
+- Phase 1: Physical rack assembly
+- Phase 2: Network bootstrap (firewall, switch)
+- Phase 3: Proxmox installation on each node
+
+**Ansible Automation (Phase 4+):** Maintain consistency
+- **Phase 4:** Clustering/Networking (Proxmox cluster, VLANs, firewall rules)
+- **Phase 5-6:** OS and Services (LXC/VM deployment, service configuration)
+- **Ongoing:** Consistency/Updates (ensure all nodes have same config, apply updates)
+
+### Documentation Files
+
 - [Initial Setup Guide](./docs/SETUP.md) - Step-by-step installation and configuration
 - [Network Configuration](./docs/NETWORK.md) - VLANs, firewall rules, and routing
 - [Proxmox Cluster Setup](./docs/PROXMOX.md) - Cluster configuration and HA setup
-- [TrueNAS Configuration](./docs/TRUENAS.md) - ZFS pools, shares, and snapshots
+- [TrueNAS Configuration](./docs/TRUENAS.md) - ZFS pools, shares, and replication
 - [Monitoring Setup](./docs/MONITORING.md) - Grafana, Prometheus, and alerting
+- [Ansible Playbooks](./ansible/) - Automation for Phase 4+ configuration
 
 ---
 
@@ -236,6 +253,7 @@ Building a homelab that balances performance, expandability, and power efficienc
 ## 🔗 Resources
 
 - [r/homelab](https://reddit.com/r/homelab) - Community for homelab enthusiasts
+- [r/minilab](https://reddit.com/r/minilab) - Inspiration for compact homelab builds
 - [Proxmox Documentation](https://pve.proxmox.com/wiki/Main_Page)
 - [TrueNAS Documentation](https://www.truenas.com/docs/)
 - [pfSense Documentation](https://docs.netgate.com/pfsense/en/latest/)
