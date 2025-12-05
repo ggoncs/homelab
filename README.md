@@ -121,7 +121,6 @@ Eero Mesh Network (192.168.4.0/22)
 ## 🏗️ Physical Rack Layout
 
 ```
-
 ┌─────────────────────────────────────────┐
 │  Eero Mesh Pod (WAN)                    │
 │  Uplink to home network                 │
@@ -183,32 +182,7 @@ Eero Mesh Network (192.168.4.0/22)
 ║  NIC: 10GbE SFP+                  ║
 ║  GPU: Intel HD 630 (iGPU)         ║
 ╚═══════════════════════════════════╝
-
-
-
 ```
-
-**Network Topology:**
-```
-pfSense (WAN) ←→ MikroTik Switch ├─ 2.5GbE → Nodes 1-3 (Intel)
-                                 ├─ 2.5GbE → PBS, TrueNAS, Pi
-                                 └─ 10GbE SFP+1 → Dell Node 4 (Tower)
-```
-```
-
-**Equipment Summary:**
-- **N150 Firewall** - pfSense with VPN, IPS/IDS, reverse proxy
-- **Raspberry Pi 5** - QDevice (5th voter), jump host, UPS monitoring
-- **MikroTik CRS310** - 8x 2.5GbE + 2x 10GbE SFP+ switch
-- **Netgear AC1750** - Homelab WiFi AP (homelab-5G SSID)
-- **Proxmox Cluster:**
-  - **Nodes 1-3** - Intel i5 ThinkCentres (2.5GbE, HA Group 1)
-  - **Node 4** - Dell Tower (10GbE SFP+, HA Group 2, high-performance VMs)
-- **PBS Node** - AMD ThinkCentre (standalone, not in cluster)
-- **Jonsbo N2 NAS** - TrueNAS with RAID 5 (5U)
-- **CyberPower UPS** - 1500VA, NUT monitoring
-
----
 
 ## ✅ Requirements & Features
 
@@ -247,23 +221,6 @@ pfSense (WAN) ←→ MikroTik Switch ├─ 2.5GbE → Nodes 1-3 (Intel)
 |------|--------------|------|----------|
 | **ThinkCentre Nodes 1-3** | 2.5GbE | HA Group 1 (Standard) | Proxmox VE 8.2, Corosync, QEMU/KVM, LXC, ZFS replication, NUT client |
 | **Dell Tower (Node 4)** | **10GbE SFP+** | HA Group 2 (Performance) | Proxmox VE 8.2, Heavy VMs with GUI, GPU passthrough (Intel HD 630 iGPU), 1TB NVMe for high IOPS |
-
-**Dell Node 4 Specifications:**
-- **Purpose:** High-performance VMs requiring GUI, GPU acceleration, and high clock speeds
-- **CPU:** Intel i7-7700 @ 3.6GHz (4C/8T) - Higher single-thread performance than Tiny nodes
-- **RAM:** 32GB DDR4 - Double the Tiny nodes for heavy Windows VMs
-- **Storage:** 
-  - 1TB NVMe SSD (Primary VM storage - high IOPS for VDI/gaming)
-  - 500GB HDD (Steam cache, bulk storage)
-- **Network:** 10GbE SFP+ connection to MikroTik (SFP+1 port)
-- **GPU:** Intel HD 630 iGPU (passthrough to Jellyfin for hardware transcoding)
-- **Workloads:**
-  - Windows Server 2022 (Active Directory DS, LDAP testing)
-  - Windows 11 VDI (Remote desktop via RustDesk)
-  - Kali Linux (Pentesting, isolated in IoT VLAN)
-  - CTF Lab VMs (HackTheBox, TryHackMe challenges)
-  - Jellyfin (Media server with GPU transcoding)
-  - Minecraft server (Benefits from high clock speed)
 
 ### 💾 Storage & Backup Layer
 
@@ -350,12 +307,6 @@ Intel Nodes (1-3)
 ## 💰 Total Investment
 
 Building a homelab that balances performance, expandability, and power efficiency (I was not budget conscious lmao)
-
-**Highlights:**
-- **10GbE backbone** for Dell performance node
-- **5-node quorum** for maximum availability
-- **Heterogeneous cluster** mixing 2.5GbE and 10GbE nodes
-- **Proper HA** with ZFS replication and QDevice
 
 **Total Hardware Cost:** See [HARDWARE.md](./HARDWARE.md) for complete breakdown
 
