@@ -4,7 +4,7 @@
 - Torrent Node and Seeding 
 - Local Backups 
 - Streaming Movies 
-- Virtualized enviroments (testing stuff)
+- Virtualized enviroments (testing stuff) (ADDS, CTFs)
 - Searxng 
 - Vault Warden?
 - Private VPN
@@ -346,17 +346,5 @@ DDNS (Pfsense) => if WAN IP changes you can still VPN in
 Tailscale => If I mess up a firewall config and DNS fails. I can use as backdoor (don't need port forwarding)
 Raspberry-Pi => Ubuntu-Server,Tailscale, PiVPN, Fail2Ban
 
-
-##### Network admin 
-Kerberos and TACAS+/LDAP 
-RDP
-DRP
-##### Networking
-LLDP 
-WLC 
-VLAN 
-Routing 
-DNS 
-DHCP 
 
 

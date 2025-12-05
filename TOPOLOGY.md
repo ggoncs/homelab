@@ -284,5 +284,5 @@ Here are the updated tables reflecting your **Final Architecture**: A **4-Node H
 | **LXC-Media-Stack** | **Dell (Node 4)** | **Debian 12** | **Podman** | **Media & Gaming Stack (10GbE)**<br>• **Jellyfin:** Media Server (**Uses Dell iGPU**).<br>• **Gluetun:** VPN Killswitch (ProtonVPN).<br>• **qBittorrent / Prowlarr:** Torrenting.<br>• **Radarr / Sonarr:** Media Managers.<br>• **SteamCMD:** Downloads to 500GB HDD. |
 | **LXC-Minecraft** | **Dell (Node 4)** | **Debian 12** | **Podman** | **Game Server**<br>• **Minecraft Java:** Uses high clock speed (3.6GHz).<br>• **Itzg-Docker:** Containerized Server. |
 | **VM-Active-Directory** | **Dell (Node 4)** | **Win Server** | **Native** | **Enterprise Identity Lab**<br>• **AD DS:** Domain Services (Uses high RAM).<br>• **DNS/DHCP:** Windows Networking.<br>• **LDAP:** Integration Testing. |
-| **VM-Win11-VDI** | **Dell (Node 4)** | **Win 11 Pro** | **Native** | **Virtual Desktop Interface**<br>• **RustDesk Client:** Remote Access.<br>• **Workstation:** General Usage.<br>• **BlueIris:** (Optional) NVR. |
+| **VM-Win11-VDI** | **Dell (Node 4)** | **Win 11 Pro** | **Native** | **Virtual Desktop Interface**<br>• **RustDesk Client:** Remote Access.<br>• **Workstation:** General Usage.|
 
