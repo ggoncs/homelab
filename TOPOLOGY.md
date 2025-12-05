@@ -38,7 +38,7 @@ ThinkCentre M710Q i5-7500T, 2.5GbE, 16GB RAM, 500GB SSD SATA
 ThinkCentre M715Q AMD Pro A10-9700E, 16GB DDR4 RAM, 128GB SSD SATA Boot-drive + 1TB NVMe
 Jonsbo N2, N5105, 16GB DDR4 RAM, 1TB NVMe, 128GB SSD SATA boot-drive, 650W PSU, 5x1TB HDD
 CyberPower CST150UC-FC UPS 1500VA
-
+Dell Precision 3620 Tower i7-7700 Quad Core 3.6Ghz 4x8GB RAM 
 
 ### Homelab Parts SAMPLE - Physical Design
 #### Parts: 
@@ -55,22 +55,18 @@ PDU
 display panel
 
 ##### Hardware
-Server 
-Mini PC
+Tower 
+Mini PC Cluster
 Raspberry-Pi
-Arduino
 UPS 
-KVM 
-GPU cluster
 
 ##### Networking
-Router/L3 Switch
 Modem
+Router/L3 Switch
 Firewall 
-Switch managed/unamaged
+Switch 
 Jump Host 
-Bastion Host 
-Hub
+
 
 ### Storage
 #### Where it is going
@@ -86,12 +82,10 @@ Dell Hardrives 500GB HD
 
 ### Miscellaneous INFO
 Netgear ProSafe GS724T V2 24-Port Gigabit Smart Switch | 43.06$
-Netgear Router AC1750, 1750Mbps
-Xplornet Hub ZTE ZXHN H298N 
-Eero 6+ Mesh - Wi-Fi 6 (AX3000) 1GB/s
-Netgear R6200 Wifi Router 803.11ac 1200Mibs
-My ISP is 50Mb/s download and 15Mb/s upload
 
+Eero 6+ Mesh - Wi-Fi 6 (AX3000) 1GB/s
+My ISP is 50Mb/s download and 15Mb/s upload
+Netgear Router AC1750, 1750Mbps
 
 ## Logical Topology
 ### Logical Design 
@@ -166,6 +160,7 @@ L3 Routing
 Infrastructure as Code (IaC)
 NUT (Network UPS Tools)
 LXC => Linux Container
+Out-of-band management (OOB) => remotly rebooting
 
 ##### Services
 Hypervisor => PVE
@@ -184,6 +179,7 @@ GitOps => ArgoCD (not very relevant for my main tasks)
 Torrenting => Radarr (Movies), Sonarr (TV), Bazarr (Subtitles), Jellyfin (Streaming)
 UPS Monitoring => NUT
 Container => Podman
+Caching Proxy 
 
 ##### Software
 VLANs 
@@ -207,6 +203,11 @@ gluetun
 qBittorrent 
 Prowlarr
 LXC
+Hardware Watchdog HA
+
+
+
+
 
 
 
@@ -224,97 +225,64 @@ VLAN 40: Trusted LAN - Your PC, Phone, WiFi.
 VLAN 50: IoT/Untrusted - Smart bulbs, Guest WiFi.
 VLAN 666: DMZ - Exposed services (Tor Node, Reverse Proxy ingress).
 
+Here are the updated tables reflecting your **Final Architecture**: A **4-Node Heterogeneous Cluster** (3 Tiny + 1 Dell) with the Raspberry Pi acting as the 5th voter (QDevice).
 
+### 🧠 The Concept: The Heterogeneous 4-Node Cluster
 
-### 🏗️ The "Mini-Enterprise" Service Matrix
+> *"Ok now that the pi and the dell are part of the cluster..."*
 
-Here is where every single piece of software lives.
+**You have moved from "Split" to "Unified."**
+
+*   **Single Pane of Glass:** You log into `https://10.0.10.11:8006` and you see **Node 1, Node 2, Node 3, and Dell-Node-4**.
+*   **The Voting Logic (Quorum):**
+    *   3 Tiny Nodes + 1 Dell = 4 Votes.
+    *   Raspberry Pi (QDevice) = 1 Vote.
+    *   **Total = 5 Votes.** (You can lose any 2 nodes and the cluster stays alive).
+*   **Storage Strategy:**
+    *   **Tiny Nodes:** Run VMs on their local 500GB SSDs (Replicated to each other).
+    *   **Dell Node:** Runs VMs on its **1TB NVMe** (No Replication to Tiny Nodes to avoid filling them up).
+    *   **Shared:** All 4 nodes mount the **TrueNAS NFS** share for ISOs and Backups.
+
+---
+
+### 📝 Updated Service Matrix
 
 #### 🖧 Physical Network & Security Layer
 
 | Machine / Hardware | OS | Services & Software Stack |
 | :--- | :--- | :--- |
-| **N150 Firewall**<br>*(The Edge)* | **OPNsense**<br>*(Preferred over pfSense for plugins)* | • **CrowdSec Bouncer:** (Modern Fail2Ban) Detects attacks & blocks IPs firewall-wide.<br>• **WireGuard Server:** Your entry point (VPN In).<br>• **HAProxy:** Reverse Proxy Ingress (Port 80/443 handling).<br>• **Unbound DNS:** Recursive DNS.<br>• **Kea DHCP:** Managing IPs.<br>• **IGMP Proxy:** For multicast traffic. |
-| **MikroTik CRS310**<br>*(The Backbone)* | **RouterOS v7** | • **VLAN Filtering:** Segregating traffic.<br>• **L3 Hardware Offloading:** Routing traffic at wire speed. |
-| **Raspberry Pi 5**<br>*(Jump Host / OOB)* | **Ubuntu Server 24.04** | • **Tailscale:** Emergency Backdoor VPN.<br>• **NUT Master:** Monitors CyberPower UPS via USB.<br>• **RustDesk Server:** Self-hosted "TeamViewer" (RDP) Relay server.<br>• **Uptime Kuma:** Dashboard on 7" Screen.<br>• **Wake-on-LAN (etherwake):** Script to wake up Intel nodes if off. |
+| **N150 Firewall**<br>*(The Edge)* | **pfSense CE** | • **FreeRADIUS:** Enterprise Auth for WiFi/VPN.<br>• **Avahi:** mDNS/Bonjour Reflector.<br>• **SNMP Agent:** Grafana monitoring metrics.<br>• **pfBlockerNG-Devel:** Ad-blocking & GeoIP filtering.<br>• **CrowdSec Agent:** IPS/IDS.<br>• **ntopng:** Deep Packet Inspection.<br>• **WireGuard:** VPN Server.<br>• **HAProxy:** Reverse Proxy Ingress.<br>• **Kea DHCP:** DHCP Server. |
+| **MikroTik CRS310**<br>*(The Backbone)* | **RouterOS v7** | • **Port SFP+1:** **10GbE Uplink** to Dell Precision.<br>• **L3 HW Offloading:** Wire-speed Routing.<br>• **ACLs:** Hardware-level traffic blocking.<br>• **Port Mirroring:** Sends traffic copy to Pi for analysis.<br>• **IGMP Snooping:** Multicast optimization. |
+| **Raspberry Pi 5**<br>*(Jump Host / OOB)* | **Ubuntu Server 24.04**<br>*(128GB NVMe)* | • **Corosync QDevice:** **(CRITICAL)** 5th Voter for Cluster Quorum.<br>• **MeshCentral:** Central OOB Mgmt (Intel AMT).<br>• **Tailscale:** Backup VPN.<br>• **NUT Master:** UPS Monitor.<br>• **RustDesk Server:** RDP Relay.<br>• **Uptime Kuma:** Service Dashboard.<br>• **Apt-Cacher-NG:** Update Mirror.<br>• **Syslog Receiver:** Forensic Logs.<br>• **Tcpdump:** Rolling PCAP. |
 
-#### ⚙️ Compute Cluster Layer (The Intel Nodes)
+#### ⚙️ Compute Layer (4-Node Heterogeneous Cluster)
 
-These machines run the Hypervisor. They utilize **Intel vPro (AMT)** for BMC/IPMI-like remote power control (since they are Enterprise Desktops).
-
-| Machine | OS | Infrastructure Services (Running on Host) |
-| :--- | :--- | :--- |
-| **ThinkCentre M710Q**<br>*(Nodes 1, 2, 3)* | **Proxmox VE 8.2** | • **Corosync:** Cluster Communication.<br>• **QEMU/KVM:** Virtualization.<br>• **LXC:** Containerization.<br>• **ZFS:** Local Storage replication.<br>• **NUT Client:** Auto-shutdown listener.<br>• **CrowdSec Agent:** Host protection. |
+| Machine | Connectivity | Role | OS | Services & Software Stack |
+| :--- | :--- | :--- | :--- | :--- |
+| **ThinkCentre M710Q**<br>*(Nodes 1, 2, 3)* | **2.5GbE** | **Standard Cluster**<br>*(HA Group 1)* | **Proxmox VE 8.2**<br>*(500GB SSD)* | • **Corosync:** Cluster HA Member.<br>• **QEMU/KVM:** Standard Virtualization.<br>• **LXC:** Containerization.<br>• **ZFS:** **Replication Target** (Between Nodes 1-3 only).<br>• **NUT Client:** Auto-shutdown.<br>• **CrowdSec Agent:** Host Security.<br>• **Node-Exporter:** Metrics. |
+| **Dell Precision 3620**<br>*(Node 4)* | **10GbE (SFP+)** | **Performance Node**<br>*(HA Group 2)* | **Proxmox VE 8.2**<br>*(1TB NVMe)* | • **Corosync:** Cluster HA Member.<br>• **QEMU/KVM:** Heavy/Windows/Gaming VMs.<br>• **ZFS (Local):** **1TB NVMe** (High IOPS for VDI).<br>• **Bulk Storage:** **500GB HDD** (Steam Cache).<br>• **Intel iGPU:** Passed through to Jellyfin.<br>• **Node-Exporter:** Metrics. |
 
 #### 💾 Storage & Backup Layer
 
-| Machine | OS | Services & Software Stack |
-| :--- | :--- | :--- |
-| **Jonsbo N2**<br>*(NAS)* | **TrueNAS Scale** | • **NFSv4:** Shared storage for Proxmox.<br>• **SMB:** Shares for Media/Docs.<br>• **Rclone:** **Cronjob** task to Sync encrypted data to **Proton Drive**.<br>• **ZFS Scrub:** Data integrity.<br>• **SMARTd:** Disk health. |
-| **ThinkCentre M715Q**<br>*(Backup)* | **Proxmox Backup Server** | • **Backup Daemon:** Handling incremental backups.<br>• **Garbage Collection:** Deleting old backups.<br>• **Datastore:** 1TB NVMe. |
+| Machine | Connectivity | OS | Services & Software Stack |
+| :--- | :--- | :--- | :--- |
+| **Jonsbo N2**<br>*(NAS)* | **2.5GbE** | **TrueNAS Scale** | • **NFSv4:** VM Storage (Shared to all 4 Nodes).<br>• **SMB:** Media Shares.<br>• **Rclone:** Cloud Sync (Proton).<br>• **ZFS Scrub:** Data Integrity.<br>• **SMARTd:** Disk Health.<br>• **Node-Exporter:** Metrics. |
+| **ThinkCentre M715Q**<br>*(Backup)* | **2.5GbE** | **Proxmox Backup Server** | • **Backup Daemon:** Deduplication engine.<br>• **Garbage Collection:** Pruning old data.<br>• **Datastore:** 1TB NVMe.<br>• **Node-Exporter:** Metrics. |
 
 ---
 
-### ☁️ Virtual Workloads (The "Software Stack")
+### ☁️ Virtual Workloads Matrix (Optimized Placement)
 
-These are the VMs and Containers running **inside** the Proxmox Cluster.
+*Note: Since this is now one cluster, "Host Preference" refers to Proxmox **High Availability Groups**.*
 
-#### 1. The DevOps & Management Stack (LXC)
-*   **Operating System:** Alpine Linux or Debian (LXC)
-*   **Services:**
-    *   **Ansible Controller:** Runs the playbooks to update all other servers.
-    *   **Terraform:** Manages the creation of VMs.
-    *   **n8n:** Workflow automation (e.g., "If Download finishes, send me a generic notification").
-    *   **GitLab Runner:** Executes your CI/CD pipelines.
-    *   **Cloud-Init:** Used here to template new VMs.
+| Container / VM Name | Host Preference | Base OS | Runtime | Workload & Services Details |
+| :--- | :--- | :--- | :--- | :--- |
+| **LXC-Mgmt-DevOps** | **Tiny Nodes (1-3)** | **Debian 12** | **Podman** | **Management & Automation Stack**<br>• **Ansible:** Configuration management.<br>• **Terraform:** IaC (VM Spawning).<br>• **n8n:** Workflow Automation.<br>• **GitLab Runner:** CI/CD Agent.<br>• **Cloud-Init:** Provisioning Templates. |
+| **LXC-Identity-Proxy** | **Tiny Nodes (1-3)** | **Debian 12** | **Podman** | **Security & Access Stack**<br>• **Authentik:** MFA, SSO, User Mgmt.<br>• **Nginx Proxy Manager:** Reverse Proxy (SSL).<br>• **Vaultwarden:** Password Manager.<br>• **CrowdSec Agent:** Log Analysis/Banning. |
+| **LXC-Net-Services** | **Tiny Nodes (1-3)** | **Debian 12** | **Podman** | **Network Utilities Stack**<br>• **Pi-Hole:** Ad Blocking & Local DNS.<br>• **Unbound:** Recursive DNS.<br>• **SearXNG:** Meta-search Engine.<br>• **Uptime Kuma:** Internal Monitoring. |
+| **VM-K8s-Cluster**<br>*(3x Nodes)* | **Tiny Nodes (1-3)** | **Talos Linux** | **Containerd** | **Kubernetes Cluster (K3s)**<br>• **LGTM Stack:** Loki, Grafana, Tempo, Mimir.<br>• **Prometheus:** Metrics.<br>• **Cert-Manager:** SSL Mgmt.<br>• **Test Lab:** Orchestration Playground. |
+| **LXC-Media-Stack** | **Dell (Node 4)** | **Debian 12** | **Podman** | **Media & Gaming Stack (10GbE)**<br>• **Jellyfin:** Media Server (**Uses Dell iGPU**).<br>• **Gluetun:** VPN Killswitch (ProtonVPN).<br>• **qBittorrent / Prowlarr:** Torrenting.<br>• **Radarr / Sonarr:** Media Managers.<br>• **SteamCMD:** Downloads to 500GB HDD. |
+| **LXC-Minecraft** | **Dell (Node 4)** | **Debian 12** | **Podman** | **Game Server**<br>• **Minecraft Java:** Uses high clock speed (3.6GHz).<br>• **Itzg-Docker:** Containerized Server. |
+| **VM-Active-Directory** | **Dell (Node 4)** | **Win Server** | **Native** | **Enterprise Identity Lab**<br>• **AD DS:** Domain Services (Uses high RAM).<br>• **DNS/DHCP:** Windows Networking.<br>• **LDAP:** Integration Testing. |
+| **VM-Win11-VDI** | **Dell (Node 4)** | **Win 11 Pro** | **Native** | **Virtual Desktop Interface**<br>• **RustDesk Client:** Remote Access.<br>• **Workstation:** General Usage.<br>• **BlueIris:** (Optional) NVR. |
 
-#### 2. The Identity & Security Stack (Docker in LXC)
-*   **Operating System:** Ubuntu Server 22.04 (LXC)
-*   **Services:**
-    *   **Authentik:** **MFA** (TOTP/WebAuthn) and SSO Provider. Handles users.
-    *   **Nginx Proxy Manager (or Traefik):** Internal Reverse Proxy.
-    *   **Bitwarden (Vaultwarden):** Password Manager.
-
-#### 3. The "Arr" Media Stack (Podman in LXC)
-*   **Operating System:** Debian 12 (LXC)
-*   **Services:**
-    *   **Gluetun:** **VPN Killswitch** (Connected to ProtonVPN).
-    *   **qBittorrent:** Torrent client (Routed *through* Gluetun).
-    *   **Prowlarr:** Indexer manager (Routed *through* Gluetun).
-    *   **Radarr/Sonarr:** Movie/TV collection managers.
-    *   **Jellyfin:** Media Player.
-
-#### 4. The Kubernetes Cluster (3x VMs)
-*   **Operating System:** Talos Linux or Ubuntu Server (VMs)
-*   **Cluster Type:** K3s (Lightweight Kubernetes)
-*   **Services (The LGTM Stack):**
-    *   **Loki:** Log aggregation.
-    *   **Grafana:** Visualization Dashboards.
-    *   **Tempo:** Tracing.
-    *   **Mimir:** Metrics.
-    *   **Prometheus:** Scrapes data from node-exporters.
-
-#### 5. Windows VDI (VM)
-*   **Operating System:** Windows 10/11 Pro
-*   **Services:**
-    *   **RustDesk Client:** Allows you to RDP into this machine from outside via your Pi Relay.
-    *   **BlueIris:** (Optional) If you ever do Security Cameras.
-
----
-
-### 🕒 Automation & Cronjobs
-
-To make this "Industry Standard," you don't just run things manually. You set schedules.
-
-1.  **NAS (TrueNAS):**
-    *   `0 3 * * *` (3 AM): **Rclone** sync critical documents to Proton Drive.
-    *   `0 5 * * 0` (Sunday): ZFS Scrub (Check for bit rot).
-
-2.  **Proxmox Cluster:**
-    *   `0 2 * * *` (2 AM): Backup all VMs to PBS (AMD Machine).
-
-3.  **Ansible Node:**
-    *   `0 4 * * 6` (Saturday): Run `apt update && apt upgrade` on all Linux nodes (Automated Patching).
-
-4.  **Raspberry Pi (UPS):**
-    *   **Daemon (Not Cron):** Polls UPS every 5 seconds. If battery < 20%, triggers `upsmon -c fsd` (Forced Shutdown).

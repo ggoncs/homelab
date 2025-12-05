@@ -4,8 +4,12 @@
 - Torrent Node and Seeding 
 - Local Backups 
 - Streaming Movies 
-- Managing Users
 - Virtualized enviroments (testing stuff)
+- Searxng 
+- Vault Warden?
+- Private VPN
+- Game file Server 
+- RDP to my PC
 
 ### Current Spend (Not Accurate)
 #### Ebay
@@ -241,6 +245,23 @@ services:
 @end
 
 
+### Uptime Kuma - INFO DUMP
+
+1. How to set up Telegram Notifications
+You will use Uptime Kuma (running on your Raspberry Pi) to handle this. It is the central nervous system that checks if everything else is alive.
+The Setup Steps:
+Create a Bot: Open Telegram on your phone, search for @BotFather, and type /newbot. Name it (e.g., Homelab_Alert_Bot).
+Get the Keys: BotFather will give you an API Token. Copy this.
+Get your ID: Search for @userinfobot in Telegram and click Start. It will give you your Chat ID.
+Configure Uptime Kuma:
+Go to your Pi's dashboard (Uptime Kuma).
+Settings -> Notifications -> Setup Notification.
+Type: Telegram.
+Paste your Bot Token and Chat ID.
+Click "Test". You will get a ping on your phone instantly.
+Apply it: Edit your monitors (e.g., "Proxmox Node 1", "Plex") and enable this notification for them.
+
+
 
 ### File Tree
 
@@ -291,14 +312,16 @@ https://imgur.com/a/homelab-v3-Vkc1EBI
 https://www.reddit.com/r/sffpc/comments/16jq9hn/jonsbo_n2_replacing_stock_fan_with_nuctoa_nfa12x25/
 https://www.reddit.com/r/minilab/comments/1otqsva/home_lab_v3_i_swear_im_done_upgrading/
 
+#### Topology Research 
+
+https://github.com/daviaraujocc/lgtm-stack
+https://medium.com/@asingh.etw/building-observability-opentelemetry-platform-with-the-grafana-lgtm-stack-and-agent-88437e94e005
+https://github.com/daviaraujocc/lgtm-stack
 
 #### Features to Consider
 iSCSI / Diskless Booting (Sanboot)
 Local LLM
 Keycloak (redhat)
-
-
-
 
 
 ### Usernames
