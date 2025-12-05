@@ -325,8 +325,7 @@ Raspberry-Pi => Ubuntu-Server,Tailscale, PiVPN, Fail2Ban
 
 
 ##### Network admin 
-Kerberos 
-TACAS+/LDAP 
+Kerberos and TACAS+/LDAP 
 RDP
 DRP
 ##### Networking
@@ -336,18 +335,5 @@ VLAN
 Routing 
 DNS 
 DHCP 
-### Security
-Fail2Ban => multiple logon attempts 
-MFA => to double check its me 
-cronjob => automatic updates
-### Automation
-cloud-init 
-n8n
-
-
-Ok make a table like format listing: Operating system, and ALL the services that is running on each machine 
-About Tunneling Strategy: Router (pfSense) vs. Container (Gluetun)
-I have a pretty powerful hardware for the firewall, will the hardware still become to use?
-
 
 

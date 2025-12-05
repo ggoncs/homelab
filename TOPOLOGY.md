@@ -208,13 +208,15 @@ qBittorrent
 Prowlarr
 LXC
 
+
+
 ______________________________________________________________________
 
 ## Architecture
 ### Logical Architecture & Topology
 VLAN 10: Management (Mgmt) - Only VPN access - PVE
 Hosts: PVE, Switch GUI (WinBox), UPS Mgmt, BMC/IPMI.
-VLAN 20: Storage (SAN) - Specialized traffic for iSCSI/NFS. Crucial for your 2.5GbE backbone.
+VLAN 20: Storage (SAN) - Specialized traffic for NFS/SMB. Crucial for your 2.5GbE backbone.
 Hosts: TrueNAS, Proxmox Storage Interfaces, PBS.
 VLAN 30: Server/Services - Where your VMs and Containers live.
 Hosts: Kubernetes Nodes, Docker Hosts, Web Servers.
@@ -222,36 +224,97 @@ VLAN 40: Trusted LAN - Your PC, Phone, WiFi.
 VLAN 50: IoT/Untrusted - Smart bulbs, Guest WiFi.
 VLAN 666: DMZ - Exposed services (Tor Node, Reverse Proxy ingress).
 
-Here is the configuration map for your Mini-Enterprise Homelab. This setup separates **Management** (Pi), **Security/Edge** (N150), **Compute** (Intel Cluster), **Backup** (AMD), and **Storage** (Jonsbo).
 
-### 📋 Homelab Service & OS Matrix
 
-| Machine / Hardware | Role | Operating System | Active Services & Software Stack |
-| :--- | :--- | :--- | :--- |
-| **N150 Firewall**<br>*(4x 2.5GbE)* | **Edge Router & Security** | **pfSense CE** (or OPNsense) | • **Firewall (pf):** L3 Rules, VLAN Routing, NAT.<br>• **WireGuard Server:** Primary VPN (Road Warrior access).<br>• **Unbound:** DNS Resolver (DNSSEC enabled).<br>• **HAProxy:** Reverse Proxy (exposed ports 80/443).<br>• **pfBlockerNG:** Network-wide Ad/Geo-IP blocking.<br>• **LLDP:** Link Layer Discovery (for Switch). |
-| **Raspberry Pi 5**<br>*(8GB, NVMe, Touchscreen)* | **Jump Host & Monitor** | **Ubuntu Server 24.04**<br>*(Headless w/ Kiosk)* | • **Tailscale:** Backup/Emergency VPN (Subnet Router).<br>• **NUT Master:** UPS Server (USB connection to CyberPower).<br>• **OpenSSH:** Secure Gateway (Jump Host).<br>• **LGTM Stack:** Loki (Logs), Grafana (Visuals), Tempo, Mimir.<br>• **Uptime Kuma:** Dashboard for Service Status (displayed on 7" screen).<br>• **Wazuh Agent:** Security Monitoring. |
-| **MikroTik CRS310**<br>*(8x 2.5GbE + SFP+)* | **Core Switch** | **RouterOS v7** | • **VLANs:** Tagging (Mgmt, Storage, IoT, Trusted).<br>• **IGMP Snooping:** Optimizing multicast.<br>• **Jumbo Frames:** MTU 9000 (for Storage/VLAN 20).<br>• **LACP/BOND:** Link Aggregation (if applicable). |
-| **ThinkCentre M710Q**<br>*(Node 1, 2, 3)* | **Compute Cluster (HA)** | **Proxmox VE 8.2** | • **Corosync:** High Availability Clustering.<br>• **QEMU/KVM:** Hosting VMs.<br>• **LXC:** Hosting Containers.<br>• **Replication:** ZFS Replication (Fast migration).<br>• **NUT Client:** Auto-shutdown listener.<br>• **Wazuh Agent:** Security Monitoring. |
-| **ThinkCentre M715Q**<br>*(AMD A10)* | **Backup Server** | **Proxmox Backup Server**<br>*(Bare Metal)* | • **Backup Daemon:** Deduplicated backup handling.<br>• **Datastore:** 1TB NVMe (Hot backups).<br>• **Garbage Collection:** Pruning old backups.<br>• **Sync Jobs:** Offsite replication (Cloud).<br>• **NUT Client:** Auto-shutdown listener. |
-| **Jonsbo N2**<br>*(N5105, 5x HDD)* | **Storage (SAN/NAS)** | **TrueNAS Scale** | • **ZFS:** RAIDZ1 (Parity Storage).<br>• **NFSv4:** Shared Storage for Proxmox VMs/ISOs.<br>• **SMB (Samba):** Shares for Windows/Mac (Media, Docs).<br>• **Smartd:** HDD Health Monitoring.<br>• **Scrub Tasks:** Data integrity checks.<br>• **NUT Client:** Auto-shutdown listener. |
+### 🏗️ The "Mini-Enterprise" Service Matrix
+
+Here is where every single piece of software lives.
+
+#### 🖧 Physical Network & Security Layer
+
+| Machine / Hardware | OS | Services & Software Stack |
+| :--- | :--- | :--- |
+| **N150 Firewall**<br>*(The Edge)* | **OPNsense**<br>*(Preferred over pfSense for plugins)* | • **CrowdSec Bouncer:** (Modern Fail2Ban) Detects attacks & blocks IPs firewall-wide.<br>• **WireGuard Server:** Your entry point (VPN In).<br>• **HAProxy:** Reverse Proxy Ingress (Port 80/443 handling).<br>• **Unbound DNS:** Recursive DNS.<br>• **Kea DHCP:** Managing IPs.<br>• **IGMP Proxy:** For multicast traffic. |
+| **MikroTik CRS310**<br>*(The Backbone)* | **RouterOS v7** | • **VLAN Filtering:** Segregating traffic.<br>• **L3 Hardware Offloading:** Routing traffic at wire speed. |
+| **Raspberry Pi 5**<br>*(Jump Host / OOB)* | **Ubuntu Server 24.04** | • **Tailscale:** Emergency Backdoor VPN.<br>• **NUT Master:** Monitors CyberPower UPS via USB.<br>• **RustDesk Server:** Self-hosted "TeamViewer" (RDP) Relay server.<br>• **Uptime Kuma:** Dashboard on 7" Screen.<br>• **Wake-on-LAN (etherwake):** Script to wake up Intel nodes if off. |
+
+#### ⚙️ Compute Cluster Layer (The Intel Nodes)
+
+These machines run the Hypervisor. They utilize **Intel vPro (AMT)** for BMC/IPMI-like remote power control (since they are Enterprise Desktops).
+
+| Machine | OS | Infrastructure Services (Running on Host) |
+| :--- | :--- | :--- |
+| **ThinkCentre M710Q**<br>*(Nodes 1, 2, 3)* | **Proxmox VE 8.2** | • **Corosync:** Cluster Communication.<br>• **QEMU/KVM:** Virtualization.<br>• **LXC:** Containerization.<br>• **ZFS:** Local Storage replication.<br>• **NUT Client:** Auto-shutdown listener.<br>• **CrowdSec Agent:** Host protection. |
+
+#### 💾 Storage & Backup Layer
+
+| Machine | OS | Services & Software Stack |
+| :--- | :--- | :--- |
+| **Jonsbo N2**<br>*(NAS)* | **TrueNAS Scale** | • **NFSv4:** Shared storage for Proxmox.<br>• **SMB:** Shares for Media/Docs.<br>• **Rclone:** **Cronjob** task to Sync encrypted data to **Proton Drive**.<br>• **ZFS Scrub:** Data integrity.<br>• **SMARTd:** Disk health. |
+| **ThinkCentre M715Q**<br>*(Backup)* | **Proxmox Backup Server** | • **Backup Daemon:** Handling incremental backups.<br>• **Garbage Collection:** Deleting old backups.<br>• **Datastore:** 1TB NVMe. |
 
 ---
 
-### 📦 Workload Breakdown (Virtualization Layer)
+### ☁️ Virtual Workloads (The "Software Stack")
 
-These services run **inside** the Proxmox Cluster (Nodes 1-3). You will distribute these across your 3 nodes using **LXC Containers** (with Podman inside) or **VMs**.
+These are the VMs and Containers running **inside** the Proxmox Cluster.
 
-| LXC / VM Name | Purpose | Software / Docker Containers Running Inside |
-| :--- | :--- | :--- |
-| **LXC-Docker-Media** | **Media Stack** | • **Gluetun:** VPN Client (Killswitch).<br>• **qBittorrent:** Torrent Client (Routed via Gluetun).<br>• **Prowlarr:** Index Manager (Routed via Gluetun).<br>• **Radarr/Sonarr:** Media Management.<br>• **Jellyfin:** Media Streaming (Mounts SMB share). |
-| **LXC-Docker-Mgmt** | **DevOps & Auth** | • **Authentik:** SSO & Identity Provider.<br>• **Nginx Proxy Manager:** Easy SSL/Subdomains.<br>• **Ansible:** Configuration Management Controller.<br>• **GitLab Runner:** CI/CD Job Executor. |
-| **VM-SIEM** | **Security** | • **Wazuh Manager:** Central Security Server (Ingests logs).<br>• **CrowdSec:** Intrusion Prevention System. |
-| **LXC-PiHole** | **DNS (Internal)** | • **Pi-Hole (Primary):** Ad-blocking DNS for VLANs.<br>• **Unbound:** Recursive DNS. |
-| **VM-Docker-Lab** | **Testing** | • **K3s / Talos:** Kubernetes playground.<br>• **Terraform State:** Infrastructure tracking. |
+#### 1. The DevOps & Management Stack (LXC)
+*   **Operating System:** Alpine Linux or Debian (LXC)
+*   **Services:**
+    *   **Ansible Controller:** Runs the playbooks to update all other servers.
+    *   **Terraform:** Manages the creation of VMs.
+    *   **n8n:** Workflow automation (e.g., "If Download finishes, send me a generic notification").
+    *   **GitLab Runner:** Executes your CI/CD pipelines.
+    *   **Cloud-Init:** Used here to template new VMs.
 
-### 🔌 Physical Connections (Critical for this Setup)
+#### 2. The Identity & Security Stack (Docker in LXC)
+*   **Operating System:** Ubuntu Server 22.04 (LXC)
+*   **Services:**
+    *   **Authentik:** **MFA** (TOTP/WebAuthn) and SSO Provider. Handles users.
+    *   **Nginx Proxy Manager (or Traefik):** Internal Reverse Proxy.
+    *   **Bitwarden (Vaultwarden):** Password Manager.
 
-1.  **UPS USB Cable:** Connects directly to **Raspberry Pi 5**.
-2.  **NFS Traffic:** Must flow over **VLAN 20** (2.5GbE) between **Proxmox Nodes** and **Jonsbo NAS**.
-3.  **Backup Traffic:** Flows from **Proxmox Nodes** to **AMD M715Q** (PBS).
-4.  **Touchscreen:** Connects to Pi 5 (HDMI/DSI) to display the **Uptime Kuma** or **Grafana** dashboard permanently.
+#### 3. The "Arr" Media Stack (Podman in LXC)
+*   **Operating System:** Debian 12 (LXC)
+*   **Services:**
+    *   **Gluetun:** **VPN Killswitch** (Connected to ProtonVPN).
+    *   **qBittorrent:** Torrent client (Routed *through* Gluetun).
+    *   **Prowlarr:** Indexer manager (Routed *through* Gluetun).
+    *   **Radarr/Sonarr:** Movie/TV collection managers.
+    *   **Jellyfin:** Media Player.
+
+#### 4. The Kubernetes Cluster (3x VMs)
+*   **Operating System:** Talos Linux or Ubuntu Server (VMs)
+*   **Cluster Type:** K3s (Lightweight Kubernetes)
+*   **Services (The LGTM Stack):**
+    *   **Loki:** Log aggregation.
+    *   **Grafana:** Visualization Dashboards.
+    *   **Tempo:** Tracing.
+    *   **Mimir:** Metrics.
+    *   **Prometheus:** Scrapes data from node-exporters.
+
+#### 5. Windows VDI (VM)
+*   **Operating System:** Windows 10/11 Pro
+*   **Services:**
+    *   **RustDesk Client:** Allows you to RDP into this machine from outside via your Pi Relay.
+    *   **BlueIris:** (Optional) If you ever do Security Cameras.
+
+---
+
+### 🕒 Automation & Cronjobs
+
+To make this "Industry Standard," you don't just run things manually. You set schedules.
+
+1.  **NAS (TrueNAS):**
+    *   `0 3 * * *` (3 AM): **Rclone** sync critical documents to Proton Drive.
+    *   `0 5 * * 0` (Sunday): ZFS Scrub (Check for bit rot).
+
+2.  **Proxmox Cluster:**
+    *   `0 2 * * *` (2 AM): Backup all VMs to PBS (AMD Machine).
+
+3.  **Ansible Node:**
+    *   `0 4 * * 6` (Saturday): Run `apt update && apt upgrade` on all Linux nodes (Automated Patching).
+
+4.  **Raspberry Pi (UPS):**
+    *   **Daemon (Not Cron):** Polls UPS every 5 seconds. If battery < 20%, triggers `upsmon -c fsd` (Forced Shutdown).
