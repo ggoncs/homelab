@@ -1,4 +1,13 @@
-## Current Spend (Not Accurate)
+# Server Build
+
+## What is the point 
+- Torrent Node and Seeding 
+- Local Backups 
+- Streaming Movies 
+- Managing Users
+- Virtualized enviroments (testing stuff)
+
+### Current Spend (Not Accurate)
 #### Ebay
 - 118.69$ 
 - 112.98$ 
@@ -41,145 +50,6 @@ Legend
 (NOT N AND NOT E) Server
 
 -----------------------
-
-
-
-
-#### Miscellaneous INFO
-473$ for the xmas-list + rj45 headers
-Netgear ProSafe GS724T V2 24-Port Gigabit Smart Switch | 43.06$
-Netgear Router AC1750, 1750Mbps
-Xplornet Hub ZTE ZXHN H298N 
-Eero 6+ Mesh - Wi-Fi 6 (AX3000) 1GB/s
-Netgear R6200 Wifi Router 803.11ac 1200Mibs
-
-
-#### Features I can't use
-iSCSI / Diskless Booting (Sanboot)
-Local LLM
-
-#### Storage
-##### SATA SSD
-SanDisk 500GB
-SanDisk 500GB
-SanDisk 500GB
-Patriot 128GB 
-Kingston 128GB 
-Cusu 2TB
-
-##### NVMe
-RP3500 1TB 
-MSI 1TB 
-G15 512GB
-Patriot 128GB 
-Cusu 2TB
-
-###### Where it is going
-G15 laptop 1TB 
-NAS 120GB + 1TB NVMe
-ThinkCentre Intel 512GB 
-ThinkCentre Intel 512GB
-ThinkCentre Intel 512GB
-ThinkCentre AMD 128GB + 2TB NVME
-Pi 5 512GB 
-N150 128GB 
-Dell Hardrives 500GB HD
-
-
-
-##### High Availability (HA) 
-3-2-1 Rule
-Uninterruptible Power Suppy (UPS)
-Proxmox Backup Server (PBS)
-Network UPS Tools (NUT)
-Data (Offsite Backup) (proton)
-DNS Reduncancy (Pi-Hole) 
-
-
-### Logical Design 
-Eero (WAN) 
-DMZ (Firewall)
-VLAN Tagging (Switch)
-Raspberry-Pi (jump host)
-
-
-
-### Homelab Parts SAMPLE - Physical Design
-#### Parts: 
-##### Rack 
-cabinet 
-mouting ears
-rails 
-patch panel 
-fan panels
-cable management guard
-lacing bar
-brush panel
-PDU 
-display panel
-
-##### Hardware
-Server 
-Mini PC
-Raspberry-Pi
-Arduino
-UPS 
-KVM 
-GPU cluster
-
-##### Networking
-Router/L3 Switch
-Modem
-Firewall 
-Switch managed/unamaged
-Jump Host 
-Bastion Host 
-Hub
-
-
-### Rack Diagrams
-#### OLD VERSION 
-Screen - Mesh } On top 
-PDU } Behind U12/U11 (Top)
-1U Venting Pannel
-Switch } 1U Mounted
-Patch Pannel } 0.5U 
-Raspberry PI } O.5U Rack Shelf 
-ThinkCentre } 1U Rack Shelf
-ThinkCentre } 1U Rack Shelf
-NAS } 5U At the bottom
-UPS - Dell Tower } Sitting Next to it 
-
-
-Unit	Device	Mounting Method	Notes
-Top	Pi 5 + Freenove Screen	Sitting on top	moved from U09
-Top	Mesh Pod	Sitting on top	
-U12	Venting Panel	Screwed into rails	
-U11	MikroTik Switch	Hard Mount	
-U10	Patch Panel	Screwed into rails	
-U09	Services Shelf	N150 Firewall (Left) + ThinkCentre PBS (Right)	Perfect fit!
-U08	ThinkCentre Stack	Node 3 (Top)	
-U07	ThinkCentre Stack	Node 2 (Middle)	
-U06	ThinkCentre Stack	Node 1 (Bottom)	
-U01-05	NAS (Jonsbo N2)	Floor/Body	
-
-
-#### Physcial Topology 
-
-Raspberry Pi 5 8GB, PoE, 512GB NVMe with 7inch Touchscreen
-N150 4x 2.5GbE, 8GB DDR4, NVMe 128GB
-MikroTik CRS310-8G+2S+IN 8x 2.5GbE + 2x SFP+ managed switch
-ThinkCentre M710Q i5-7400T, 2.5GbE, 16GB RAM, 500GB SSD SATA
-ThinkCentre M710Q i5-7500T, 2.5GbE, 16GB RAM, 500GB SSD SATA
-ThinkCentre M710Q i5-7500T, 2.5GbE, 16GB RAM, 500GB SSD SATA
-ThinkCentre M715Q AMD Pro A10-9700E, 16GB DDR4 RAM, 128GB SSD SATA Boot-drive + 1TB NVMe
-Jonsbo N2, N5105, 16GB DDR4 RAM, 1TB NVMe, 128GB SSD SATA boot-drive, 650W PSU, 5x1TB HDD
-CyberPower CST150UC-FC UPS 1500VA
-
-High Availability (HA)
-Network UPS Tools (NUT)
-Maybe put NUT on the PBS instead
-CloudSync => RClone 
 
 ### High Availability (HA) - INFO DUMP
 Redundancy Recommendations (The "3-2-1" Rule)
@@ -229,7 +99,7 @@ glusterfs, ha,
 
 I'm running a single Proxmox unprivileged LXC container using Docker to run the following services: Plex, Overseerr, Radarr, Sonarr, Prowlarr, SABnzb, qBittorrent, Bazarr, Tuatulli, Bookshelf (Readarr fork), Calibre. Happy to share the docker compose file to anyone who requests it (this was easily the longest and hardest part of the project, getting all the services working together and automated, especially Readarr and Calibre).
 
-###### Reddit guy info: (not included into the article) 
+#### Reddit guy info: (not included into the article) 
 A bit about software:
 - basically everything is configured via ansible
 - all services (adguard, rsnapshot, samba, nginx, searxng, baikal, forgejo, syncthing, mc, etc...) are running in rootless podman containers.
@@ -317,6 +187,60 @@ Port 7	1GbE	Raspberry Pi 5 (via PoE Injector)
 Port 8	1GbE	EMPTY / SPARE (Available for future expansion!)
 
 
+### UPS monitoring - INFO DUMP
+
+Step B: UPS Monitoring (Graceful Shutdown)
+This is critical. You need NUT (Network UPS Tools).
+Physical: USB cable from CyberPower UPS to the Raspberry Pi 5 (or TrueNAS).
+Master (Server): Configure the Pi as the netserver. It reads the USB data.
+Slaves (Clients): Install nut-client on Proxmox Nodes and TrueNAS.
+Logic:
+Power fails -> UPS signals Pi.
+Pi waits (e.g., 5 mins on battery).
+Pi sends FSD (Forced Shutdown) flag to network.
+Proxmox nodes receive flag -> Stop VMs -> Shutdown OS.
+TrueNAS receives flag -> Unmount ZFS -> Shutdown.
+Pi shuts down last
+
+### Automation INFO DUMP 
+
+Step C: Automation (Ansible & Terraform)
+Terraform: Use this to create the VM.
+Example: "I want a VM with 2 vCPUs, 4GB RAM, named 'Web-Server'."
+Ansible: Use this to configure the VM.
+Example: "I want Nginx installed, my user created, and the timezone set to EST."
+Logical Workflow:
+You push code to GitHub.
+GitLab CI/CD runner (on your cluster) sees the change.
+Runner executes terraform apply -> Proxmox creates VM.
+Runner executes ansible-playbook -> Configures VM.
+
+What is a Killswitch?
+A safety mechanism that ensures traffic only flows through the VPN interface (tun0). If the VPN connection drops, the network interface blocks all traffic, rather than defaulting back to your unprotected ISP connection (which would expose your IP).
+
+Gluetun is a "VPN Client in a Container."
+
+You don't configure the VPN inside qBittorrent. Instead, you tell Docker/Podman to route qBittorrent's network through Gluetun.
+Docker Compose Example (Visualized):
+
+@code yaml
+services:
+  gluetun:
+    image: qmcgaw/gluetun
+    cap_add:
+      - NET_ADMIN
+    environment:
+      - VPN_SERVICE_PROVIDER=protonvpn
+      - VPN_TYPE=wireguard
+    ports:
+      - 8080:8080 # qBittorrent WebUI routed through here
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent
+    network_mode: "service:gluetun" # <--- THE MAGIC LINE
+@end
+
+
 
 ### File Tree
 
@@ -367,6 +291,16 @@ https://imgur.com/a/homelab-v3-Vkc1EBI
 https://www.reddit.com/r/sffpc/comments/16jq9hn/jonsbo_n2_replacing_stock_fan_with_nuctoa_nfa12x25/
 https://www.reddit.com/r/minilab/comments/1otqsva/home_lab_v3_i_swear_im_done_upgrading/
 
+
+#### Features to Consider
+iSCSI / Diskless Booting (Sanboot)
+Local LLM
+Keycloak (redhat)
+
+
+
+
+
 ### Usernames
 Admin Usernames 
 switch = ctr-adm38
@@ -385,15 +319,35 @@ SAN (Storage Area Network) => VM's hardrive is on the NAS
 NFS on TrueNAS => for Backups and ISO library
 SMB => Jellyfin + Documents + Prism
 Quorum (2-1 majority vote from nodes)
-DDNS (DuckDNS) => if WAN IP changes you can still VPN in
+DDNS (Pfsense) => if WAN IP changes you can still VPN in
+Tailscale => If I mess up a firewall config and DNS fails. I can use as backdoor (don't need port forwarding)
+Raspberry-Pi => Ubuntu-Server,Tailscale, PiVPN, Fail2Ban
 
 
-### HA Notes 
-- Corosync => Cluster Manager
-- ZFS(RAID0) replication on nodes
-- Quorum (2-1 majority vote from nodes)
-- Seperate VLAN for Management(VLAN1) and for Storage/Migration(VLAN2)
-- Backup DNS in a container
-- Hardware Watchdog in ThinkCentre BIOS => if proxmox freezes the hello packet (ACK), reboots it 
+##### Network admin 
+Kerberos 
+TACAS+/LDAP 
+RDP
+DRP
+##### Networking
+LLDP 
+WLC 
+VLAN 
+Routing 
+DNS 
+DHCP 
+### Security
+Fail2Ban => multiple logon attempts 
+MFA => to double check its me 
+cronjob => automatic updates
+### Automation
+cloud-init 
+n8n
+
+
+Ok make a table like format listing: Operating system, and ALL the services that is running on each machine 
+About Tunneling Strategy: Router (pfSense) vs. Container (Gluetun)
+I have a pretty powerful hardware for the firewall, will the hardware still become to use?
+
 
 

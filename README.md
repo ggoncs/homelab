@@ -99,14 +99,6 @@ This homelab is built on four pillars:
 └─────────────────────────────────────────┘
 ```
 
-**Equipment Summary:**
-- **N150 Firewall** - 4x 2.5GbE, 8GB DDR4, 128GB NVMe (pfSense) - *On top of rack*
-- **Raspberry Pi 5** - 8GB RAM, PoE, 512GB NVMe, 7" Touchscreen (monitoring/services) - *On top of rack*
-- **MikroTik CRS310** - 8x 2.5GbE + 2x SFP+ managed switch
-- **ThinkCentre Nodes (4x)** - Proxmox cluster with 16GB RAM each (3 Intel, 1 AMD)
-- **Jonsbo N2 NAS** - TrueNAS with RAID 5 storage (5U total)
-- **CyberPower UPS** - 1500VA battery backup
-
 ---
 
 ## ✅ Requirements
