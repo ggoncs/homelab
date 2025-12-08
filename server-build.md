@@ -10,6 +10,7 @@
 - Private VPN
 - Game file Server 
 - RDP to my PC
+- Self-hosting my own databases 
 
 ### Current Spend (Not Accurate)
 #### Ebay
@@ -324,15 +325,6 @@ Local LLM
 Keycloak (redhat)
 
 
-### Usernames
-Admin Usernames 
-switch = ctr-adm38
-Pi = jump-adm64
-Proxmox = cluster-adm92
-TrueNas = nas-admin11
-non-admin = dlaurin
-
-
 ## TERMS + Notes
 2.5GBE backbone 
 SMB vs NFS vs iSCI 
@@ -345,6 +337,30 @@ Quorum (2-1 majority vote from nodes)
 DDNS (Pfsense) => if WAN IP changes you can still VPN in
 Tailscale => If I mess up a firewall config and DNS fails. I can use as backdoor (don't need port forwarding)
 Raspberry-Pi => Ubuntu-Server,Tailscale, PiVPN, Fail2Ban
+Tiering => Asymmetric cluster
+Deduplication Ratio: Usually 15:1 or better for VM backups
+NFS Subdir External Provisioner/ TrueNAS-CSI
+Cilium handles the network between your Tiny Nodes and Dell
+Renovate keeps your GitOps repo updated automatically.
+Upgrade Wifi for 2.5GBE and VLAN (so it dosen't strip)
+
+#### Sofwares to look into
+Cillum/Calico
+CoreDNS
+Rook/Ceph 
+homepage
+Isto 
+Falco/Dynatrace 
+ELK stack
+External DNS Kubernetes 
+Renavate 
+Gata
+Full Packet Capture (PCAP)
+Suricata Zeek
+ntopng
+Security Onion
+glutun 
+deluge? 
 
 
 
