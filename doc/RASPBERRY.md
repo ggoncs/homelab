@@ -2,7 +2,7 @@
 
 ![Raspberry Pi 5](YOUR_IMAGE_URL_HERE)
 
-A comprehensive guide for setting up a Raspberry Pi 5 as a high-performance homelab jump host with NVMe boot and PCIe Gen 3 speeds.
+A comprehensive guide for setting up a Raspberry Pi 5 as a high-performance homelab jump host with NVMe boot, PCIe Gen 3 speeds, Docker, and Chromium kiosk mode.
 
 ## 📚 Reference Documentation
 
@@ -150,15 +150,34 @@ sudo deluser --remove-home admin
 lsblk
 ```
 
-### 5.2 Clone SD Card to NVMe
+### 5.2 Install rpi-clone
 
 ```bash
-sudo dd if=/dev/mmcblk0 of=/dev/nvme0n1 bs=4M status=progress
+git clone https://github.com/geerlingguy/rpi-clone.git
+cd rpi-clone/
+sudo cp rpi-clone rpi-clone-setup /usr/local/sbin
 ```
 
-> **Warning:** This will overwrite all data on the NVMe drive.
+### 5.3 Clone SD Card to NVMe
 
-### 5.3 Randomize NVMe GUID
+```bash
+sudo rpi-clone nvme0n1
+```
+
+> **Note:** `rpi-clone` is more reliable than `dd` as it handles partitions and filesystem expansion automatically.
+
+### 5.4 Clean NVMe (if needed)
+
+If you encounter errors, clean the NVMe first:
+
+```bash
+sudo umount /dev/nvme0n1p*
+sudo wipefs --all --force /dev/nvme0n1
+```
+
+Then run `sudo rpi-clone nvme0n1` again.
+
+### 5.5 Randomize NVMe GUID
 
 Prevents boot conflicts with the original SD card.
 
@@ -173,7 +192,7 @@ sudo gdisk /dev/nvme0n1
 4. Enter `w` (write table to disk)
 5. Enter `Y` (confirm)
 
-### 5.4 Configure Boot Order
+### 5.6 Configure Boot Order
 
 ```bash
 sudo raspi-config
@@ -183,7 +202,22 @@ sudo raspi-config
 - Choose: **A6 Boot Order**
 - Select: **NVMe/USB Boot**
 
-### 5.5 Power Off and Remove SD Card
+### 5.7 Configure EEPROM Boot Order (Alternative Method)
+
+You can also edit the EEPROM configuration directly:
+
+```bash
+export EDITOR=vim
+sudo -E rpi-eeprom-config --edit
+```
+
+Verify the configuration:
+
+```bash
+rpi-eeprom-config
+```
+
+### 5.8 Power Off and Remove SD Card
 
 ```bash
 sudo poweroff
@@ -191,7 +225,7 @@ sudo poweroff
 
 > Remove the SD card before powering back on.
 
-### 5.6 Expand Filesystem
+### 5.9 Expand Filesystem
 
 After booting from NVMe:
 
@@ -252,15 +286,173 @@ sudo hdparm -tT /dev/nvme0n1
 
 ---
 
-## 7. Hostname Configuration
+## 7. Docker Installation
 
-### 7.1 Set Hostname
+### 7.1 Install Docker
+
+```bash
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+```
+
+### 7.2 Add User to Docker Group
+
+```bash
+sudo usermod -aG docker $USER
+```
+
+### 7.3 Log Out and Back In
+
+```bash
+logout
+```
+
+Then reconnect via SSH to apply group changes.
+
+### 7.4 Verify Docker Installation
+
+```bash
+docker --version
+docker run hello-world
+```
+
+---
+
+## 8. Chromium Kiosk Mode Setup (Display Configuration)
+
+### 8.1 Install Required Packages
+
+```bash
+sudo apt update
+sudo apt install xserver-xorg xinit x11-xserver-utils chromium unclutter -y
+```
+
+### 8.2 Configure X Server Startup
+
+Create `.xinitrc`:
+
+```bash
+vim ~/.xinitrc
+```
+
+Add the following content:
+
+```bash
+#!/bin/bash
+# 1. Disable the screen saver and power management (so the screen stays ON)
+xset s off
+xset -dpms
+xset s noblank
+
+# 2. Hide the mouse cursor after 0.5 seconds of inactivity
+unclutter -idle 0.5 -root &
+
+# 3. Launch Chromium in Kiosk Mode
+# --kiosk: Full screen, no address bar
+# --incognito: Don't save history/cache
+# --noerrdialogs: Don't show "Chromium didn't shut down correctly"
+exec chromium --noerrdialogs --disable-infobars --kiosk --incognito "http://localhost:3001"
+```
+
+Make it executable:
+
+```bash
+chmod +x ~/.xinitrc
+```
+
+### 8.3 Configure Auto Login
+
+```bash
+sudo raspi-config
+```
+
+- Select: **1 System Options**
+- Choose: **S5 Boot / Auto Login**
+- Select: **B2 Console Autologin**
+- Finish and reboot
+
+### 8.4 Auto-start X Server on Login
+
+Create `.bash_profile`:
+
+```bash
+vim ~/.bash_profile
+```
+
+Add the following:
+
+```bash
+if [[ -z $DISPLAY ]] && [[ $(tty) = /dev/tty1 ]]; then
+    startx -- -nocursor
+fi
+```
+
+### 8.5 Add User to Video Groups
+
+```bash
+sudo usermod -aG video,render,tty jump-adm
+```
+
+### 8.6 Configure GPU Driver
+
+Create driver configuration:
+
+```bash
+sudo mkdir -p /etc/X11/xorg.conf.d
+sudo vim /etc/X11/xorg.conf.d/99-vc4.conf
+```
+
+Add the following:
+
+```
+Section "OutputClass"
+    Identifier "vc4"
+    MatchDriver "vc4"
+    Driver "modesetting"
+    Option "PrimaryGPU" "true"
+EndSection
+```
+
+### 8.7 Remove Conflicting Driver
+
+```bash
+sudo apt remove xserver-xorg-video-fbturbo
+```
+
+### 8.8 Verify X Server Configuration
+
+Check the X wrapper configuration:
+
+```bash
+cat /etc/X11/Xwrapper.config
+```
+
+Should contain:
+
+```
+allowed_users=console
+needs_root_rights=yes
+```
+
+### 8.9 Reboot
+
+```bash
+sudo reboot
+```
+
+After reboot, Chromium should automatically launch in kiosk mode displaying your application at `http://localhost:3001`.
+
+---
+
+## 9. Hostname Configuration
+
+### 9.1 Set Hostname
 
 ```bash
 sudo hostnamectl set-hostname pi-jump-homelab
 ```
 
-### 7.2 Update Hosts File
+### 9.2 Update Hosts File
 
 ```bash
 sudo vim /etc/hosts
@@ -273,7 +465,7 @@ Update to:
 127.0.1.1 pi-jump-homelab
 ```
 
-### 7.3 Verify Hostname
+### 9.3 Verify Hostname
 
 ```bash
 ping -c 4 pi-jump-homelab.local
@@ -285,10 +477,12 @@ ping -c 4 pi-jump-homelab.local
 
 Your Raspberry Pi 5 is now configured as a high-performance jump host with:
 
-- ✅ NVMe boot
+- ✅ NVMe boot (using rpi-clone)
 - ✅ PCIe Gen 3 speeds (up to ~850 MB/s)
 - ✅ Secure SSH access
 - ✅ Custom administrative user
+- ✅ Docker container support
+- ✅ Chromium kiosk mode with auto-start
 - ✅ Optimized hostname configuration
 
 ## 🔧 Troubleshooting
@@ -298,4 +492,3 @@ If you encounter boot issues, refer to the [LED Warning Flash Codes](https://www
 ---
 
 <center>Made with ❤️</center>
-
