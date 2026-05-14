@@ -25,7 +25,7 @@
 
 | Rack | Grafana Dashboard | Proxmox Cluster |
 |------|-------------------|-----------------|
-| ![Rack](./img/rack/front-rack.jpg) | ![Grafana](./img/dashboards/grafana-overview.png) | ![Proxmox](./img/dashboards/proxmox-cluster.png) |
+| ![Rack](./img/rack/front-rack.jpg) | ![Grafana](./img/dashboards/grafana-overview.png) | ![Proxmox](./img/dashboards/proxmox.jpg) |
 
 ---
 
@@ -42,17 +42,7 @@
 
 ## Hardware
 
-| Node | CPU | RAM    | Network | Role |
-|------|-----|-----|---------|------|
-| pve-node1 | i5-7400T (ThinkCentre) | 32 GB | 2.5 GbE | General workloads |
-| pve-node2 | i5-7500T (ThinkCentre) | 32 GB | 2.5 GbE | General workloads |
-| pve-node3 | i5-7500T (ThinkCentre) | 16 GB | 2.5 GbE | General workloads |
-| pve-node4 | i7-7700 (Dell Tower) | 32 GB | 10 GbE SFP+ | Performance node: GPU, CTF labs, Windows |
-| pbs-node | AMD PRO A10-9700E (4C+6G, 10 cores) | 16 GB | 2.5 GbE | Standalone PBS, 1.98 TB datastore |
-| truenas | | | 2.5 GbE + 10 GbE | NAS, ZFS storage backend |
-| pi-jump | Raspberry Pi 5 | | GbE | QDevice + UPS master + kiosk display |
-
-| Node      | CPU                                  | RAM   | Network           | Role |
+| Node      | CPU                                  | RAM‎    | Network           | Role |
 |------------|--------------------------------------|--------|-------------------|------|
 | pve-node1 | i5-7400T (ThinkCentre)              | 32 GB | 2.5 GbE          | General workloads |
 | pve-node2 | i5-7500T (ThinkCentre)              | 32 GB | 2.5 GbE          | General workloads |
