@@ -12,20 +12,20 @@
 <br>
 <br>
 <br>
+
+> Personal documentation for a self-hosted homelab: a 4-node Proxmox VE cluster with TrueNAS Scale storage, pfSense routing, and Podman Quadlet-based containerization. Built with an IaC-first approach (Packer, Terraform, cloud-init, Ansible) and designed around proper network segmentation, high availability where it matters, and a complete 3-2-1-1 backup strategy.
+
 </div>
-
-Personal documentation for a self-hosted homelab: a 4-node Proxmox VE cluster with TrueNAS Scale storage, pfSense routing, and Podman Quadlet-based containerization. Built with an IaC-first approach (Packer, Terraform, cloud-init, Ansible) and designed around proper network segmentation, high availability where it matters, and a complete 3-2-1-1 backup strategy.
-
 
 ---
 
 ## Gallery
 
-> Photos of the physical lab, rack, and dashboards live in [`assets/images/`](./assets/images/).
+> Photos of the physical lab, rack, and dashboards live in [`/img/`](./img/).
 
 | Rack | Grafana Dashboard | Proxmox Cluster |
 |------|-------------------|-----------------|
-| ![Rack](./img/rack/rack-front.jpg) | ![Grafana](./img/dashboards/grafana-overview.png) | ![Proxmox](./img/dashboards/proxmox-cluster.png) |
+| ![Rack](./img/rack/front-rack.jpg.jpg) | ![Grafana](./img/dashboards/grafana-overview.png) | ![Proxmox](./img/dashboards/proxmox-cluster.png) |
 
 ---
 
@@ -36,15 +36,13 @@ Personal documentation for a self-hosted homelab: a 4-node Proxmox VE cluster wi
 - [Network Topology](#network-topology)
 - [Core Architecture](#core-architecture)
 - [Storage](#storage)
-- [Backup: 3-2-1-1](#backup-3-2-1-1)
-- [External Access](#external-access)
 - [Resources](#resources)
 
 ---
 
 ## Hardware
 
-| Node | CPU | RAM | Network | Role |
+| Node | CPU | RAM    | Network | Role |
 |------|-----|-----|---------|------|
 | pve-node1 | i5-7400T (ThinkCentre) | 32 GB | 2.5 GbE | General workloads |
 | pve-node2 | i5-7500T (ThinkCentre) | 32 GB | 2.5 GbE | General workloads |
@@ -77,6 +75,8 @@ Personal documentation for a self-hosted homelab: a 4-node Proxmox VE cluster wi
 ---
 
 ## Network Topology
+
+> RoutOS dashboard reference image in [`/img/dashboards/routeros`](./img/dashboards/routeros.png).
 
 ```
 ISP
@@ -114,6 +114,9 @@ VLAN 10 (Management) is Tailscale-gated. No direct access without being on the m
 VLAN 666 (DMZ) has a hard block rule against all RFC1918 space. Public internet outbound only.
 
 Pi-hole at `10.0.30.9` and `10.0.30.11` serves DNS for Management, Services, Trusted, and IoT. DMZ uses pfSense directly with no internal DNS visibility.
+
+> Example firewall configuration reference image in [`/img/dashboards/pfsense`](./img/dashboards/pfsense.png).
+
 
 ### IP Allocation
 
@@ -183,6 +186,8 @@ journalctl -u jellyfin
 ## Storage
 
 ### TrueNAS Pools
+
+> Dataset reference image in [`/img/dashboards/truenas`](./img/dashboards/truenas.png).
 
 ```
 TrueNAS (10.0.20.25, Storage VLAN 20)
