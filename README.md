@@ -1,4 +1,4 @@
-# homelab-notes
+# homelab
 
 <div align="center">
 
