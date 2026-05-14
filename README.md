@@ -1,328 +1,222 @@
-# 🏠 My Homelab Journey
+# homelab-notes
 
 <div align="center">
-  
+
 ![pfSense](https://img.shields.io/badge/pfSense-212121?style=for-the-badge&logo=pfsense&logoColor=white)
 ![Proxmox](https://img.shields.io/badge/Proxmox-E57000?style=for-the-badge&logo=proxmox&logoColor=white)
 ![TrueNAS](https://img.shields.io/badge/TrueNAS-0095D5?style=for-the-badge&logo=truenas&logoColor=white)
 ![MikroTik](https://img.shields.io/badge/MikroTik-293239?style=for-the-badge&logo=mikrotik&logoColor=white)
 
+<br>
+<img src="/img/logo.png" alt="Homelab Logo" width="200">
+<br>
+<br>
+<br>
 </div>
 
+Personal documentation for a self-hosted homelab: a 4-node Proxmox VE cluster with TrueNAS Scale storage, pfSense routing, and Podman Quadlet-based containerization. Built with an IaC-first approach (Packer, Terraform, cloud-init, Ansible) and designed around proper network segmentation, high availability where it matters, and a complete 3-2-1-1 backup strategy.
+
+
 ---
 
-## 📖 My Story
+## Gallery
 
-This is my second homelab a direct upgrade from a single Dell Tower running Debian + CasaOS. While the original setup was capable (especially with 32GB DDR4 RAM), I faced critical issues with data redundancy, backups, and storage. I had filled the 1TB NVMe completely, storing all games for potential re-downloads. This made it impossible to use Timeshift for backups, forcing me to rely on Proton Drive, which defeated the entire purpose of having a local server.
+> Photos of the physical lab, rack, and dashboards live in [`assets/images/`](./assets/images/).
 
-It was time for an upgrade. This time, I wanted a dedicated NAS to host game downloads, media files, and run a full-fledged Jellyfin server (with arr stack) . I also had a Raspberry Pi 5 and Lenovo ThinkCentre minis collecting dust, unused because I only had two Ethernet ports available from the home network. I needed a proper server rack with networking infrastructure a complete DMZ within my home network.
+| Rack | Grafana Dashboard | Proxmox Cluster |
+|------|-------------------|-----------------|
+| ![Rack](./img/rack/rack-front.jpg) | ![Grafana](./img/dashboards/grafana-overview.png) | ![Proxmox](./img/dashboards/proxmox-cluster.png) |
 
-### 🚨 Software Limitations
+---
 
-On the software side, CasaOS showed serious limitations. While it's pretty, free, and a great gateway to IT without paying premium prices for commercial NAS solutions, it had issues. CasaOS excels at spinning up known Docker containers through its app menu, but experimenting with custom containers and practicing DNS/Bash scripting/Apache caused frequent breakage requiring rebuilds. CasaOS broke my Nextcloud installation four separate times after updates, forcing me to export and migrate to new containers each time. I eventually started using Portainer as my primary dashboard, not a good sign.
+## Contents
 
-### 💥 The Breaking Point
+- [Hardware](#hardware)
+- [Software Stack](#software-stack)
+- [Network Topology](#network-topology)
+- [Core Architecture](#core-architecture)
+- [Storage](#storage)
+- [Backup: 3-2-1-1](#backup-3-2-1-1)
+- [External Access](#external-access)
+- [Resources](#resources)
 
-I encountered trouble hosting Steam-CLI for my games, so I installed a GUI (KDE) to run Steam directly. This caused massive issues:
-- My NVS310 GPU stopped working
-- Steam couldn't use GPU acceleration properly
-- KDE uses Network Manager while Debian Server uses ifupdown, creating conflicts
-- Containers lost their default gateway configuration and couldn't connect to the internet
+---
 
-Every time I updated and rebooted, I had to physically run these commands:
+## Hardware
+
+| Node | CPU | RAM | Network | Role |
+|------|-----|-----|---------|------|
+| pve-node1 | i5-7400T (ThinkCentre) | 32 GB | 2.5 GbE | General workloads |
+| pve-node2 | i5-7500T (ThinkCentre) | 32 GB | 2.5 GbE | General workloads |
+| pve-node3 | i5-7500T (ThinkCentre) | 16 GB | 2.5 GbE | General workloads |
+| pve-node4 | i7-7700 (Dell Tower) | 32 GB | 10 GbE SFP+ | Performance node: GPU, CTF labs, Windows |
+| pbs-node | AMD PRO A10-9700E (4C+6G, 10 cores) | 16 GB | 2.5 GbE | Standalone PBS, 1.98 TB datastore |
+| truenas | | | 2.5 GbE + 10 GbE | NAS, ZFS storage backend |
+| pi-jump | Raspberry Pi 5 | | GbE | QDevice + UPS master + kiosk display |
+
+---
+
+## Software Stack
+
+| Layer | Technology |
+|-------|------------|
+| Hypervisor | Proxmox VE (KVM/QEMU + LXC) |
+| Backup | Proxmox Backup Server (physical standalone node) |
+| Storage | TrueNAS Scale, ZFS (FastPool NVMe + AppPool NVMe + Tank HDD) |
+| Networking | pfSense edge, MikroTik CRS310, 6 VLANs |
+| Containers | Podman + Podman Quadlets (systemd-native, rootful for NFS bind mounts) |
+| IaC | Packer, Terraform, cloud-init, Ansible |
+| Remote access | Tailscale mesh VPN (Headscale planned) |
+| DNS | Pi-hole 6 + Unbound (recursive resolver), split-horizon |
+| Reverse proxy | Nginx Proxy Manager (internal), HAProxy on pfSense (public) |
+| SSO | Authentik |
+| Observability | Prometheus, Grafana, Loki, Uptime Kuma |
+| Base OS | Debian 13 (VMs/LXC), Raspberry Pi OS (Pi) |
+| Git + CI | Forgejo + Forgejo Runner |
+
+---
+
+## Network Topology
+
+```
+ISP
+ └── Eero (NAT, port forwards: 443, 25565, 9001)
+      └── pfSense (igc1 = WAN)
+           └── igc0 -> MikroTik CRS310 (trunk, all VLANs tagged)
+                ├── ether1  -> pve-node1   (trunk: 10,20,30,40,50,666)
+                ├── ether2  -> pve-node2   (trunk: 10,20,30,40,50,666)
+                ├── ether3  -> pve-node3   (trunk: 10,20,30,40,50,666)
+                ├── ether4  -> pbs-node    (trunk: 10,20)
+                ├── ether5  -> truenas     (trunk: 10,20)
+                ├── ether6  -> pfSense     (uplink, all VLANs)
+                ├── ether7  -> pi-jump     (access, untagged VLAN 10)
+                ├── ether8  -> Netgear AP  (trunk: 10,40,50)
+                └── sfp+1   -> pve-node4   (trunk: 10,20,30,40,50,666, 10 GbE)
+```
+
+### VLAN Design
+
+| VLAN | ID | Subnet | Gateway | Purpose |
+|------|----|--------|---------|---------|
+| Management | 10 | 10.0.10.0/24 | 10.0.10.1 | Proxmox nodes, TrueNAS, switch, PBS. Tailscale-gated |
+| Storage | 20 | 10.0.20.0/24 | 10.0.20.1 | NFS/SMB traffic. L2 only, no inter-VLAN routing |
+| Services | 30 | 10.0.30.0/24 | 10.0.30.1 | VMs, LXC containers, internal services |
+| Trusted | 40 | 10.0.40.0/24 | 10.0.40.1 | Personal devices, homelab Wi-Fi |
+| IoT | 50 | 10.0.50.0/24 | 10.0.50.1 | Smart devices, guest Wi-Fi, CTF lab VMs |
+| DMZ | 666 | 10.0.66.0/24 | 10.0.66.1 | Public-facing services, blocked from all internal VLANs |
+
+**VLAN philosophy:**
+
+VLAN 20 (Storage) is a dedicated data plane. pfSense blocks all routing into or out of it. NFS traffic stays L2 between Proxmox nodes, PBS, and TrueNAS.
+
+VLAN 10 (Management) is Tailscale-gated. No direct access without being on the mesh VPN.
+
+VLAN 666 (DMZ) has a hard block rule against all RFC1918 space. Public internet outbound only.
+
+Pi-hole at `10.0.30.9` and `10.0.30.11` serves DNS for Management, Services, Trusted, and IoT. DMZ uses pfSense directly with no internal DNS visibility.
+
+### IP Allocation
+
+**Management VLAN 10 (10.0.10.0/24)**
+
+| Device | IP | Hostname |
+|--------|----|----------|
+| pfSense | 10.0.10.1 | fw.homelab.local |
+| MikroTik | 10.0.10.2 | switch.homelab.local |
+| pve-node1 | 10.0.10.11 | pve-node1.homelab.local |
+| pve-node2 | 10.0.10.12 | pve-node2.homelab.local |
+| pve-node3 | 10.0.10.13 | pve-node3.homelab.local |
+| pve-node4 | 10.0.10.14 | pve-node4.homelab.local |
+| pbs-node | 10.0.10.20 | pbs.homelab.local |
+| truenas | 10.0.10.25 | truenas.homelab.local |
+| pi-jump | 10.0.10.30 | pi-jump.homelab.local |
+| Netgear AP | 10.0.10.40 | ap.homelab.local |
+
+---
+
+## Core Architecture
+
+### IaC Pipeline
+
+```
+Forgejo (Git, source of truth)
+|
+|-- 1. Packer     -> Golden LXC/VM templates (Debian 13)
+|                    Bakes in: qemu-agent, node-exporter, SSH keys, sysctl
+|
+|-- 2. Terraform  -> Clones templates, creates LXC containers and VMs
+|                    Sets: CPU, RAM, disk, VLAN tag, IP, hostname
+|
+|-- 3. cloud-init -> First-boot config injected by Terraform
+|                    Sets: users, SSH keys, hostname, network
+|
++-- 4. Ansible    -> Day-2 configuration, runs after cloud-init
+                     Deploys: Podman Quadlet unit files to /etc/containers/systemd/
+                     Manages: systemd services, bind mounts, firewall rules
+
+Flow: git push -> Forgejo webhook -> CI runner -> terraform apply -> ansible-playbook
+```
+
+### Service Delivery: Podman Quadlets
+
+Every container is a systemd unit. Ansible drops `.container` files into `/etc/containers/systemd/` and runs `systemctl daemon-reload`. Services are managed like any other systemd unit:
 
 ```bash
-nmcli device show enp0s31f6
-sudo ip route flush dev vethe90e8b0
+systemctl start jellyfin
+systemctl status jellyfin
+journalctl -u jellyfin
 ```
 
-This was incredibly frustrating since I couldn't SSH in to fix it remotely. Time for a new journey with my upgraded homelab!
+### VM/LXC Tiering
+
+| ID Range | Tier | Type | Description |
+|----------|------|------|-------------|
+| 101-199 | 1 | VM | HA-critical infrastructure (Proxmox HA group: critical) |
+| 201-299 | 2 | LXC | Service workloads, Podman Quadlets (HA group: services) |
+| 301-399 | 3 | VM | DMZ, public-facing, no HA, air-gapped |
+| 401-499 | 4 | VM | Isolated lab, pinned to node4, local NVMe, no migration |
+| 501-599 | 5 | LXC | System daemons, kernel/host-level access only |
+| 601-699 | 6 | VM | Future Kubernetes cluster (VLAN 50, isolated) |
 
 ---
 
-## 🎯 Core Architecture: Heterogeneous 4-Node Cluster
+## Storage
 
-This homelab uses a **unified heterogeneous cluster** approach:
-
-### The Concept
-
-- **4 Compute Nodes** in a single Proxmox cluster:
-  - 3x Intel ThinkCentre Tiny (2.5GbE, 500GB SSD each)
-  - 1x Dell Precision Tower (10GbE SFP+, 1TB NVMe + 500GB HDD)
-- **Raspberry Pi 5** as Corosync QDevice (5th voter for quorum)
-- **Single pane of glass** management at `https://10.0.10.11:8006`
-
-### Voting Logic (Quorum)
-- 3 Tiny Nodes + 1 Dell = **4 Votes**
-- Raspberry Pi QDevice = **1 Vote**
-- **Total = 5 Votes** (can lose any 2 nodes and cluster stays alive)
-
-### Storage Strategy
-- **Intel Nodes (1-3):** Run VMs on local 500GB SSDs with ZFS replication between themselves
-- **Dell Node (4):** Runs VMs on 1TB NVMe (no replication to avoid filling Tiny nodes)
-- **Shared Storage:** All 4 nodes mount TrueNAS NFS for ISOs, backups, and media
-- **PBS:** Separate AMD node (not in cluster) for deduplicated backups
-
----
-
-## 🎯 Core Technology Stack
-
-This homelab is built on four pillars:
-
-- **🔥 pfSense** - Network security, routing, and VPN (DMZ gateway)
-- **🦄 MikroTik RouterOS** - Managed switching with 2.5GbE + 10GbE SFP+
-- **☁️ Proxmox VE** - 4-node heterogeneous cluster with HA
-- **💾 TrueNAS** - ZFS-based centralized storage with data redundancy
-
----
-
-## 📊 Network Architecture
-
-### Network Topology Overview
+### TrueNAS Pools
 
 ```
-Internet (50/15 Mbps)
-    ↓
-Home Router (Not Admin)
-    ↓
-Eero Mesh Network (192.168.4.0/22)
-    ↓
-    └─── pfSense Firewall WAN (single uplink)
-             ↓
-        [HOMELAB DMZ - 10.0.0.0/8]
-             ↓
-        MikroTik Switch (2.5GbE + 10GbE SFP+)
-             ↓
-        ┌────┴────┬────────┬─────────┬────────┬───────────┐
-        │         │        │         │        │           │
-    Node 1-3  Dell Node  TrueNAS   PBS   Raspberry Pi  Netgear AP
-    (2.5GbE)  (10GbE)   (2.5GbE) (2.5GbE)  (2.5GbE)   (homelab-5G)
-        │         │        │         │        │
-        └─────────┴────────┴─────────┴────────┘
-              Proxmox Cluster (4 nodes)
-           + QDevice on Pi (5th voter)
-```
-
-### VLAN Design Philosophy
-
-**6 VLANs for Complete Network Segregation:**
-
-| VLAN | Name | Purpose | Security Level |
-|------|------|---------|----------------|
-| 10 | Management | Proxmox, Switch, IPMI, BMC - VPN access only | 🔴 Critical |
-| 20 | Storage/SAN | NFS, SMB, - 2.5GbE/10GbE backbone | 🟡 Isolated |
-| 30 | Services | VMs, Containers, Kubernetes, Web Services | 🟢 Standard |
-| 40 | Trusted LAN | laptop, phone, gaming-pc  homelab-5G WiFi | 🟢 Standard |
-| 50 | IoT/Untrusted | homelab-guest, Smart devices, Testing | 🟠 Restricted |
-| 666 | DMZ | Tor node, Reverse proxy, Public-facing services | 🔴 Exposed |
-
----
-
-## 🏗️ Physical Rack Layout
-
-```
-┌─────────────────────────────────────────┐
-│  Eero Mesh Pod (WAN)                    │
-│  Uplink to home network                 │
-└─────────────────────────────────────────┘
-┌─────────────────────────────────────────┐
-│  N150 Firewall (on top of rack)         │
-│  4x 2.5GbE, 8GB DDR4, 128GB NVMe        │
-│  WAN → 192.168.4.x (home network)       │
-│  LAN → 10.0.0.0/8 (homelab DMZ)         │
-└─────────────────────────────────────────┘
-┌─────────────────────────────────────────┐
-│  Raspberry Pi 5 (on top of rack)        │
-│  8GB RAM, 512GB NVMe, PoE+              │
-│  + 7" Touchscreen attached              │
-│  Jump Host + QDevice, UPS monitor       │
-└─────────────────────────────────────────┘
-┌─────────────────────────────────────────┐
-│  Netgear AC1750 AP 1GbE (homelab-5G)    │  
-│  VLAN-aware AP for DMZ wireless         │
-└─────────────────────────────────────────┘
-┌─────────────────────────────────────────┐
-│  Venting Panel                          │  U12
-├─────────────────────────────────────────┤
-│  MikroTik CRS310-8G+2S+IN               │  U11
-│  8x 2.5GbE + 2x SFP+ (10GbE)            │
-├─────────────────────────────────────────┤
-│  12-Port Patch Panel                    │  U10
-├─────────────────────────────────────────┤
-│  ThinkCentre M715Q (PBS Node)           │  U05
-│  AMD A10-9700E, 16GB RAM, 2TB (2.5GbE)  │ 
-├─────────────────────────────────────────┤
-│  ThinkCentre M710Q (Node 3)             │  U08
-│  i5-7500T, 16GB, 500GB SSD (2.5GbE)     │ 
-├─────────────────────────────────────────┤
-│  ThinkCentre M710Q (Node 2)             │  U07
-│  i5-7500T, 16GB, 500GB SSD (2.5GbE)     │
-├─────────────────────────────────────────┤
-│  ThinkCentre M710Q (Node 1)             │  U06
-│  i5-7400T, 16GB, 500GB SSD (2.5GbE)     │
-├─────────────────────────────────────────┤
-│                                         │  U05
-│  Jonsbo N2 NAS                          │  U04
-│  N5105, 16GB RAM, TrueNAS               │  U03
-│  5x 1TB HDD (RAID 5)                    │  U02
-│  1TB NVMe Cache, 650W PSU               │  U01
-└─────────────────────────────────────────┘
-┌─────────────────────────────────────────┐
-│  CyberPower UPS 1500VA (Next to Rack)   │
-└─────────────────────────────────────────┘
-
-╔═══════════════════════════════════╗
-║  Dell Precision 3620 Tower        ║
-║  (Node 4 - Next to Rack)          ║
-║  ════════════════════════════════ ║
-║  CPU: i7-7700 @ 3.6GHz (4C/8T)    ║
-║  RAM: 32GB DDR4                   ║
-║  SSD: 1TB NVMe (VMs)              ║
-║  HDD: 500GB (Steam cache)         ║
-║  NIC: 10GbE SFP+                  ║
-║  GPU: Intel HD 630 (iGPU)         ║
-╚═══════════════════════════════════╝
-```
-
-## ✅ Requirements & Features
-
-### Core Requirements
-- ✅ **4-node heterogeneous cluster** with HA (3 Intel + 1 Dell)
-- ✅ **10GbE SFP+ uplink** for Dell performance node
-- ✅ **Corosync QDevice** on Raspberry Pi (5th voter for quorum)
-- ✅ **ZFS replication** between Intel nodes (500GB SSDs)
-- ✅ **RAID 5 storage** on TrueNAS
-- ✅ **6 VLAN design** for complete network segregation
-- ✅ **Jump server** via Raspberry Pi + VPN
-- ✅ **DMZ network** (10.0.0.0/8 isolated from home 192.168.4.0/22)
-- ✅ **Wireless AP** for homelab (Netgear AC1750)
-- ✅ **UPS with NUT** for graceful shutdowns
-
-### Network Constraints
-- ❌ **No admin access to main router** - Single uplink to home network
-- ✅ **Port forwarding** - Coordinated with network admin
-- ⚠️ **Limited bandwidth** - 50 Mbps down / 15 Mbps up (shared)
-
----
-
-## 🛠️ Software Stack by Layer
-
-### 🖧 Physical Network & Security Layer
-
-| Component | OS/Platform | Key Services |
-|-----------|-------------|--------------|
-| **N150 Firewall** | pfSense CE | WireGuard VPN, HAProxy, pfBlockerNG, CrowdSec, ntopng, FreeRADIUS, Avahi |
-| **MikroTik CRS310** | RouterOS v7 | L3 HW offload, ACLs, Port mirroring, IGMP snooping, 10GbE SFP+ |
-| **Raspberry Pi 5** | Ubuntu 24.04 | **Corosync QDevice**, MeshCentral, Tailscale, NUT Master, Uptime Kuma, Apt-Cacher-NG |
-
-### ⚙️ Compute Layer (4-Node Cluster)
-
-| Node | Connectivity | Role | Services |
-|------|--------------|------|----------|
-| **ThinkCentre Nodes 1-3** | 2.5GbE | HA Group 1 (Standard) | Proxmox VE 8.2, Corosync, QEMU/KVM, LXC, ZFS replication, NUT client |
-| **Dell Tower (Node 4)** | **10GbE SFP+** | HA Group 2 (Performance) | Proxmox VE 8.2, Heavy VMs with GUI, GPU passthrough (Intel HD 630 iGPU), 1TB NVMe for high IOPS |
-
-### 💾 Storage & Backup Layer
-
-| Component | Purpose | Key Features |
-|-----------|---------|--------------|
-| **TrueNAS (Jonsbo N2)** | Centralized storage | NFSv4 (VM storage), SMB (media), Rclone (Proton), ZFS scrub |
-| **PBS (AMD ThinkCentre)** | Backup server | Deduplication, garbage collection, 1TB NVMe datastore |
-
-### ☁️ Virtual Workloads (Optimized Placement)
-
-**Intel Nodes (HA Group 1):**
-- LXC-Mgmt-DevOps (Ansible, Terraform, n8n, GitLab Runner)
-- LXC-Identity-Proxy (Authentik, Nginx Proxy Manager, Vaultwarden, CrowdSec)
-- LXC-Net-Services (Pi-Hole, Unbound, SearXNG, Uptime Kuma)
-- VM-K8s-Cluster (3x Talos nodes - LGTM stack, Prometheus, Cert-Manager)
-
-**Dell Node (HA Group 2 - High Performance):**
-- **LXC-Media-Stack** (Jellyfin w/ iGPU passthrough, Gluetun, qBittorrent, *arr suite)
-- **VM-Active-Directory** (Windows Server 2022, AD DS, DNS/DHCP, LDAP testing)
-- **VM-Win11-VDI** (Windows 11 Pro, RustDesk, general desktop usage)
-- **VM-Kali-Linux** (Pentesting lab, isolated in IoT VLAN for safety)
-- **VM-CTF-Labs** (Capture The Flag practice environments, HackTheBox VMs)
-- **LXC-Minecraft** (Java server using high clock speed i7-7700)
-
----
-
-## 🔒 3-2-1 Backup Strategy
-
-### Backup Architecture
-
-**3 Copies of Data:**
-1. **Production** - TrueNAS (ZFS RAID 5)
-2. **Backup #1** - Proxmox Backup Server (encrypted, deduplicated)
-3. **Backup #2** - Proton Drive (offsite, encrypted via Rclone)
-
-**2 Different Storage Types:**
-- **Onsite #1:** TrueNAS (ZFS on HDDs)
-- **Onsite #2:** PBS (ext4 on NVMe)
-
-**1 Offsite Copy:**
-- **Proton Drive** (cloud storage, encrypted)
-
-### Backup Flow
-```
-TrueNAS (Production) 
-    ├─→ ZFS Snapshots (hourly/daily)
-    ├─→ VM Storage (NFS) → Proxmox → PBS (nightly backups)
-    └─→ Cloud Sync → Proton Drive (weekly, encrypted)
-
-Intel Nodes (1-3)
-    └─→ ZFS Replication (between nodes for HA)
+TrueNAS (10.0.20.25, Storage VLAN 20)
+|
+|-- FastPool (NVMe A, 1 TB)
+|   +-- Proxmox_NFS_Fast      All LXC and VM OS disks. Enables live/cold migration.
+|
+|-- AppPool (NVMe B, 1 TB)    App data on NVMe, separated from spinning HDD.
+|   +-- App_Data/
+|       |-- VM_Auth/           Authentik postgres, high random R/W
+|       |-- VM_Auth_Rep/       Authentik postgres replica
+|       |-- VM_Net/            Pi-hole data
+|       |-- LXC_Cloud/         Immich postgres + ML cache + thumbnails
+|       |-- LXC_Obs/           Prometheus TSDB, write-heavy
+|       |-- LXC_Arr/           Radarr, Sonarr, qBit config DBs
+|       |-- LXC_Media/         Jellyfin metadata
+|       +-- LXC_Ingress/       NPM proxy config
+|
++-- Tank (HDD, spinning)
+    |-- Media/
+    |   |-- Immich_Library/    Original photos and videos, NFS to lxc-203
+    |   |-- Jellyfin_Library/  Movies and TV, re-downloadable
+    |   +-- Proxmox_Archive/   Cold ISOs, OVA templates
+    |-- Shares/
+    |   |-- Personal_Vault/    SMB + NFS, personal documents, encrypted
+    |   +-- Trusted_Share/     SMB, shared documents
+    +-- Backups/
+        |-- PBS_Replication/   NFS, PBS datastore managed by pbs-node
+        +-- Config_Backups/    SMB, pfSense XML, TrueNAS config, SSH keys
 ```
 
 ---
 
-## 📚 Configuration & Setup Guides
-
-### Ansible Automation Strategy
-
-**Manual Setup (Phases 1-3):** Learn the commands hands-on
-- Phase 1: Physical rack assembly
-- Phase 2: Network bootstrap (pfSense, MikroTik, VLANs)
-- Phase 3: Proxmox installation on all 4 nodes
-
-**Ansible Automation (Phase 4+):** Maintain consistency
-- **Phase 4:** Clustering (4-node cluster + QDevice setup)
-- **Phase 5:** Storage (TrueNAS shares, NFS mounts)
-- **Phase 6:** Services (Deploy VMs/LXCs, Kubernetes)
-- **Ongoing:** Updates, monitoring, configuration drift prevention
-
-### Documentation Files
-
-- [Hardware Specifications](./HARDWARE.md) - Complete BOM with pricing
-- [Initial Setup Guide](./docs/SETUP.md) - Step-by-step installation
-- [Network Configuration](./docs/NETWORK.md) - 6-VLAN design, pfSense rules
-- [Proxmox Cluster Setup](./docs/PROXMOX.md) - 4-node heterogeneous cluster + QDevice
-- [TrueNAS Configuration](./docs/TRUENAS.md) - ZFS pools, shares, cloud sync
-- [Monitoring Setup](./docs/MONITORING.md) - LGTM stack, UPS monitoring
-- [pfSense Configuration](./docs/PFSENSE.md) - Complete firewall setup
-- [Ansible Playbooks](./ansible/) - Automation for Phase 4+ configuration
-
----
-
-## 💰 Total Investment
-
-Building a homelab that balances performance, expandability, and power efficiency (I was not budget conscious lmao)
-
-**Total Hardware Cost:** See [HARDWARE.md](./HARDWARE.md) for complete breakdown
-
----
-
-## 🔗 Resources
+## Resources
 
 - [r/homelab](https://reddit.com/r/homelab) - Community for homelab enthusiasts
 - [r/minilab](https://reddit.com/r/minilab) - Inspiration for compact homelab builds
-- [Proxmox Documentation](https://pve.proxmox.com/wiki/Main_Page)
-- [TrueNAS Documentation](https://www.truenas.com/docs/)
-- [pfSense Documentation](https://docs.netgate.com/pfsense/en/latest/)
-- [MikroTik Wiki](https://wiki.mikrotik.com/)
-
----
-
-## 📝 License
-
-This documentation is shared for educational purposes. Feel free to use and adapt for your own homelab!

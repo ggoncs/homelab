@@ -1,8 +1,6 @@
 # TODO 
-- picture of the server 
-- add firewall 
-- open a port to the internet 
+- deploy all microservices 
+- physical topology draw.io 
+- network topology 
+- IaC deployment scripts 
 
-
-Intro + software + why did I pick these parts 
-Logical Diagram (know what software I'm using)
