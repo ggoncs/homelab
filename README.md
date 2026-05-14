@@ -23,9 +23,20 @@
 
 > Photos of the physical lab, rack, and dashboards live in [`/img/`](./img/).
 
-| Rack | Grafana Dashboard | Proxmox Cluster |
-|------|-------------------|-----------------|
-| ![Rack](./img/rack/front-rack.jpg) | ![Grafana](./img/dashboards/grafana-overview.png) | ![Proxmox](./img/dashboards/proxmox.png) |
+### Rack
+
+[![Rack](./img/rack/front-rack.jpg)](./img/rack/front-rack.jpg)
+
+### Proxmox Cluster
+
+[![Proxmox](./img/dashboards/proxmox.png)](./img/dashboards/proxmox.png)
+
+<!-- Add later when available -->
+<!--
+### Grafana Dashboard
+
+[![Grafana](./img/dashboards/grafana-overview.png)](./img/dashboards/grafana-overview.png)
+-->
 
 ---
 
